@@ -7,7 +7,7 @@ deferred_handler_enabled = False
 def enable_deferred_handler():
     # at least one DeferredSetting is being used, so override the
     # __getattr__ handler for the setting module and catch any
-    # DeferredSetting use and return an appropriate value
+    # DeferredSetting use and return an appropriate value from the environment
     global deferred_handler_enabled
     if not deferred_handler_enabled:  # only do this once
         from django.conf import LazySettings
