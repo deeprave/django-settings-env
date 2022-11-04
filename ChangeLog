@@ -1,0 +1,6 @@
+Changes
+
+- Release 4.3.0
+  - fixed an issue evaluating DeferredSettings instance where __getattr__ would get skipped
+  - deferred values are now cached
+
