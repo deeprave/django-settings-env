@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "django-settings-env"
-version = "4.2.1"
+version = "4.3.0"
 description = "12-factor.net settings support for Django based on envex"
 authors = ["David Nugent <davidn@uniquode.io>"]
 readme = "README.md"
