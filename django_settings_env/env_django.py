@@ -2,71 +2,79 @@
 """
 Wrapper around os.environ with django config value parsers
 """
-from urllib.parse import urlparse, urlunparse, parse_qs, unquote_plus
+from urllib.parse import parse_qs, unquote_plus, urlparse, urlunparse
 
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.encoding import smart_str
 from envex import Env
 
-DEFAULT_DATABASE_ENV = 'DATABASE_URL'
-DJANGO_POSTGRES = 'django.db.backends.postgresql'
-MYSQL_DRIVER = 'django.db.backends.mysql'
+DEFAULT_DATABASE_ENV = "DATABASE_URL"
+DJANGO_POSTGRES = "django.db.backends.postgresql"
+MYSQL_DRIVER = "django.db.backends.mysql"
 DB_SCHEMES = {
-    'postgres': DJANGO_POSTGRES,
-    'postgresql': DJANGO_POSTGRES,
-    'psql': DJANGO_POSTGRES,
-    'pgsql': DJANGO_POSTGRES,
-    'postgis': 'django.contrib.gis.db.backends.postgis',
-    'mysql': MYSQL_DRIVER,
-    'mysql2': MYSQL_DRIVER,
-    'mysql-connector': 'mysql.connector.django',
-    'mysqlgis': 'django.contrib.gis.db.backends.mysql',
-    'mssql': 'sql_server.pyodbc',
-    'oracle': 'django.db.backends.oracle',
-    'pyodbc': 'sql_server.pyodbc',
-    'redshift': 'django_redshift_backend',
-    'spatialite': 'django.contrib.gis.db.backends.spatialite',
-    'sqlite': 'django.db.backends.sqlite3',
-    'ldap': 'ldapdb.backends.ldap',
+    "postgres": DJANGO_POSTGRES,
+    "postgresql": DJANGO_POSTGRES,
+    "psql": DJANGO_POSTGRES,
+    "pgsql": DJANGO_POSTGRES,
+    "postgis": "django.contrib.gis.db.backends.postgis",
+    "mysql": MYSQL_DRIVER,
+    "mysql2": MYSQL_DRIVER,
+    "mysql-connector": "mysql.connector.django",
+    "mysqlgis": "django.contrib.gis.db.backends.mysql",
+    "mssql": "sql_server.pyodbc",
+    "oracle": "django.db.backends.oracle",
+    "pyodbc": "sql_server.pyodbc",
+    "redshift": "django_redshift_backend",
+    "spatialite": "django.contrib.gis.db.backends.spatialite",
+    "sqlite": "django.db.backends.sqlite3",
+    "ldap": "ldapdb.backends.ldap",
 }
 _DB_BASE_OPTIONS = [
-    'CONN_MAX_AGE', 'ATOMIC_REQUESTS', 'AUTOCOMMIT', 'SSLMODE', 'TEST',
+    "CONN_MAX_AGE",
+    "ATOMIC_REQUESTS",
+    "AUTOCOMMIT",
+    "SSLMODE",
+    "TEST",
     # extensions
-    'READ_ONLY', 'READONLY', 'HTTP_METHODS', 'HTTP_WRITE_PATHS', 'HTTP_WRITE_STICKY'
+    "READ_ONLY",
+    "READONLY",
+    "HTTP_METHODS",
+    "HTTP_WRITE_PATHS",
+    "HTTP_WRITE_STICKY",
 ]
 
-DEFAULT_CACHE_ENV = 'CACHE_URL'
-REDIS_CACHE = 'django_redis.cache.RedisCache'
+DEFAULT_CACHE_ENV = "CACHE_URL"
+REDIS_CACHE = "django_redis.cache.RedisCache"
 CACHE_SCHEMES = {
-    'dbcache': 'django.core.cache.backends.db.DatabaseCache',
-    'dummycache': 'django.core.cache.backends.dummy.DummyCache',
-    'filecache': 'django.core.cache.backends.filebased.FileBasedCache',
-    'locmemcache': 'django.core.cache.backends.locmem.LocMemCache',
-    'memcache': 'django.core.cache.backends.memcached.MemcachedCache',
-    'pymemcache': 'django.core.cache.backends.memcached.PyLibMCCache',
-    'rediscache': REDIS_CACHE,
-    'redis': REDIS_CACHE,
+    "dbcache": "django.core.cache.backends.db.DatabaseCache",
+    "dummycache": "django.core.cache.backends.dummy.DummyCache",
+    "filecache": "django.core.cache.backends.filebased.FileBasedCache",
+    "locmemcache": "django.core.cache.backends.locmem.LocMemCache",
+    "memcache": "django.core.cache.backends.memcached.MemcachedCache",
+    "pymemcache": "django.core.cache.backends.memcached.PyLibMCCache",
+    "rediscache": REDIS_CACHE,
+    "redis": REDIS_CACHE,
 }
-_CACHE_BASE_OPTIONS = ['TIMEOUT', 'KEY_PREFIX', 'VERSION', 'KEY_FUNCTION', 'BINARY']
+_CACHE_BASE_OPTIONS = ["TIMEOUT", "KEY_PREFIX", "VERSION", "KEY_FUNCTION", "BINARY"]
 
-DEFAULT_EMAIL_ENV = 'EMAIL_URL'
-EMAIL_AMAZON_SES = 'django_ses.SESBackend'
-EMAIL_SMTP = 'django.core.mail.backends.smtp.EmailBackend'
+DEFAULT_EMAIL_ENV = "EMAIL_URL"
+EMAIL_AMAZON_SES = "django_ses.SESBackend"
+EMAIL_SMTP = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_SCHEMES = {
-    'smtp': EMAIL_SMTP,
-    'smtps': EMAIL_SMTP,
-    'smtp+tls': EMAIL_SMTP,
-    'smtp+ssl': EMAIL_SMTP,
-    'consolemail': 'django.core.mail.backends.console.EmailBackend',
-    'filemail': 'django.core.mail.backends.filebased.EmailBackend',
-    'memorymail': 'django.core.mail.backends.locmem.EmailBackend',
-    'dummymail': 'django.core.mail.backends.dummy.EmailBackend',
-    'amazonses': EMAIL_AMAZON_SES,
-    'amazon-ses': EMAIL_AMAZON_SES,
+    "smtp": EMAIL_SMTP,
+    "smtps": EMAIL_SMTP,
+    "smtp+tls": EMAIL_SMTP,
+    "smtp+ssl": EMAIL_SMTP,
+    "consolemail": "django.core.mail.backends.console.EmailBackend",
+    "filemail": "django.core.mail.backends.filebased.EmailBackend",
+    "memorymail": "django.core.mail.backends.locmem.EmailBackend",
+    "dummymail": "django.core.mail.backends.dummy.EmailBackend",
+    "amazonses": EMAIL_AMAZON_SES,
+    "amazon-ses": EMAIL_AMAZON_SES,
 }
-_EMAIL_BASE_OPTIONS = ['EMAIL_USE_TLS', 'EMAIL_USE_SSL']
+_EMAIL_BASE_OPTIONS = ["EMAIL_USE_TLS", "EMAIL_USE_SSL"]
 
-DEFAULT_SEARCH_ENV = 'SEARCH_URL'
+DEFAULT_SEARCH_ENV = "SEARCH_URL"
 SEARCH_SCHEMES = {
     "elasticsearch": "haystack.backends.elasticsearch_backend.ElasticsearchSearchEngine",
     "elasticsearch2": "haystack.backends.elasticsearch2_backend.Elasticsearch2SearchEngine",
@@ -76,26 +84,23 @@ SEARCH_SCHEMES = {
     "simple": "haystack.backends.simple_backend.SimpleEngine",
 }
 
-DEFAULT_QUEUE_ENV = 'QUEUE_URL'
+DEFAULT_QUEUE_ENV = "QUEUE_URL"
 QUEUE_SCHEMES = {
-    'rabbitmq': {
-        'backend': 'mq.backends.rabbitmq_backend.create_backend',
-        'default-port': 5672,
+    "rabbitmq": {
+        "backend": "mq.backends.rabbitmq_backend.create_backend",
+        "default-port": 5672,
     },
-    'redis': {
-        'backend': REDIS_CACHE,
-        'default-port': 6379
+    "redis": {"backend": REDIS_CACHE, "default-port": 6379},
+    "amazonsqs": {
+        "backend": "mq.backends.sqs_backend.create_backend",
     },
-    'amazonsqs': {
-        'backend': 'mq.backends.sqs_backend.create_backend',
-    },
-    'amazon-sqs': {
-        'backend': 'mq.backends.sqs_backend.create_backend',
+    "amazon-sqs": {
+        "backend": "mq.backends.sqs_backend.create_backend",
     },
 }
 _QUEUE_BASE_OPTIONS = []
 
-_DEFAULT_ENV_PREFIX = 'DJANGO_'
+_DEFAULT_ENV_PREFIX = "DJANGO_"
 
 _DEFAULT_PREFIX = object()
 
@@ -106,8 +111,8 @@ class DjangoEnv(Env):
     """
 
     def __init__(self, *args, **kwargs):
-        self.prefix = kwargs.pop('prefix', _DEFAULT_ENV_PREFIX)
-        exception = kwargs.pop('exception', ImproperlyConfigured)
+        self.prefix = kwargs.pop("prefix", _DEFAULT_ENV_PREFIX)
+        exception = kwargs.pop("exception", ImproperlyConfigured)
         super().__init__(*args, exception=exception, **kwargs)
 
     def _with_prefix(self, var, prefix):
@@ -152,11 +157,13 @@ class DjangoEnv(Env):
             try:
                 # noinspection PyUnresolvedReferences
                 from class_settings.env import DeferredEnv
+
                 return DeferredEnv(self, kwargs=kwargs, optional=optional)
             except ImportError:
                 pass
             # otherwise use our own implementation (handles module level vars)
             from .deferred import DeferredSetting
+
             # class settings not installed
             return DeferredSetting(env=self, kwargs=kwargs)
         try:
@@ -179,59 +186,58 @@ class DjangoEnv(Env):
         """
         url = self.check_var(var, default=default)
         # shortcut to avoid urlparse
-        if url == 'sqlite://:memory':
-            return {
-                'ENGINE': DB_SCHEMES['sqlite'],
-                'NAME': ':memory:'
-            }
+        if url == "sqlite://:memory":
+            return {"ENGINE": DB_SCHEMES["sqlite"], "NAME": ":memory:"}
 
         # otherwise parse the url as normal
         config = {}
         url = urlparse(url)
 
         path = smart_str(url.path[1:])
-        path = unquote_plus(path.split('?', 2)[0])
+        path = unquote_plus(path.split("?", 2)[0])
 
-        if url.scheme == 'sqlite' and path == '':
-            path = ':memory:'
-        elif url.scheme == 'ldap':
-            path = f'{url.scheme}://{url.hostname}'
+        if url.scheme == "sqlite" and path == "":
+            path = ":memory:"
+        elif url.scheme == "ldap":
+            path = f"{url.scheme}://{url.hostname}"
             if url.port:
-                path += f':{url.port}'
+                path += f":{url.port}"
 
         # Handle postgres percent-encoded paths.
-        hostname = url.hostname or ''
-        if '%2f' in hostname.lower():
+        hostname = url.hostname or ""
+        if "%2f" in hostname.lower():
             # Switch to url.netloc to avoid lower cased paths
             hostname = url.netloc
             if "@" in hostname:
                 hostname = hostname.rsplit("@", 1)[1]
             if ":" in hostname:
                 hostname = hostname.split(":", 1)[0]
-            hostname = hostname.replace('%2f', '/').replace('%2F', '/')
+            hostname = hostname.replace("%2f", "/").replace("%2F", "/")
 
         engine = DB_SCHEMES[url.scheme] if engine is None else engine
-        port = (str(url.port) if url.port and engine == DB_SCHEMES['oracle'] else url.port)
+        port = str(url.port) if url.port and engine == DB_SCHEMES["oracle"] else url.port
 
         # Update with configuration.
-        config.update({
-            'NAME': path or '',
-            'USER': url.username or '',
-            'PASSWORD': url.password or '',
-            'HOST': hostname,
-            'PORT': port or ''
-        })
+        config.update(
+            {
+                "NAME": path or "",
+                "USER": url.username or "",
+                "PASSWORD": url.password or "",
+                "HOST": hostname,
+                "PORT": port or "",
+            }
+        )
 
-        if url.scheme == 'postgres' and path.startswith('/'):
-            config['HOST'], config['NAME'] = path.rsplit('/', 1)
+        if url.scheme == "postgres" and path.startswith("/"):
+            config["HOST"], config["NAME"] = path.rsplit("/", 1)
 
-        elif url.scheme == 'oracle':
-            if path == '':
-                config['NAME'], config['HOST'] = config['HOST'], ''
-            if not config['PORT']:  # Django oracle/base.py strips port and fails on non-string value
-                del(config['PORT'])
+        elif url.scheme == "oracle":
+            if path == "":
+                config["NAME"], config["HOST"] = config["HOST"], ""
+            if not config["PORT"]:  # Django oracle/base.py strips port and fails on non-string value
+                del config["PORT"]
             else:
-                config['PORT'] = str(config['PORT'])
+                config["PORT"] = str(config["PORT"])
 
         db_options = {}
         # Pass the query string into OPTIONS.
@@ -243,12 +249,12 @@ class DjangoEnv(Env):
                     db_options.update({key: self._int(values[0])})
 
             # Support for Postgres Schema URLs
-            if 'currentSchema' in db_options and engine in (
-                'django.contrib.gis.db.backends.postgis',
-                'django.db.backends.postgresql_psycopg2',
-                'django_redshift_backend',
+            if "currentSchema" in db_options and engine in (
+                "django.contrib.gis.db.backends.postgis",
+                "django.db.backends.postgresql_psycopg2",
+                "django_redshift_backend",
             ):
-                db_options['options'] = '-c search_path={0}'.format(db_options.pop('currentSchema'))
+                db_options["options"] = "-c search_path={0}".format(db_options.pop("currentSchema"))
 
         if options:
             for key, value in options.items():
@@ -257,13 +263,13 @@ class DjangoEnv(Env):
                 else:
                     db_options.update({key: value})
         if db_options:
-            config['OPTIONS'] = {k.upper(): v for k, v in db_options.items()}
+            config["OPTIONS"] = {k.upper(): v for k, v in db_options.items()}
         if engine:
-            config['ENGINE'] = engine
+            config["ENGINE"] = engine
         return config
 
     def cache_url(self, var=DEFAULT_CACHE_ENV, *, default=None, backend=None, options=None):
-        """ based on dj-cache-url
+        """based on dj-cache-url
 
         :param var: variable to use
         :param default: default variable
@@ -273,29 +279,33 @@ class DjangoEnv(Env):
         """
         url = urlparse(self.check_var(var, default=default))
 
-        location = url.netloc.split(',')
+        location = url.netloc.split(",")
         if len(location) == 1:
             location = location[0]
 
         config = {
-            'BACKEND': backend if backend else CACHE_SCHEMES[url.scheme],
-            'LOCATION': location,
+            "BACKEND": backend if backend else CACHE_SCHEMES[url.scheme],
+            "LOCATION": location,
         }
 
         # Add the drive to LOCATION
-        if url.scheme == 'filecache':
-            config.update({
-                'LOCATION': url.netloc + url.path,
-            })
+        if url.scheme == "filecache":
+            config.update(
+                {
+                    "LOCATION": url.netloc + url.path,
+                }
+            )
 
-        if url.path and url.scheme in ['unix', 'memcache', 'pymemcache']:
-            config.update({
-                'LOCATION': f'unix:{url.path}',
-            })
-        elif url.scheme.startswith('redis'):
-            scheme = url.scheme.replace('cache', '') if url.hostname else 'unix'
-            locations = [f'{scheme}://{smart_str(loc)}{url.path}' for loc in url.netloc.split(',')]
-            config['LOCATION'] = locations[0] if len(locations) == 1 else locations
+        if url.path and url.scheme in ["unix", "memcache", "pymemcache"]:
+            config.update(
+                {
+                    "LOCATION": f"unix:{url.path}",
+                }
+            )
+        elif url.scheme.startswith("redis"):
+            scheme = url.scheme.replace("cache", "") if url.hostname else "unix"
+            locations = [f"{scheme}://{smart_str(loc)}{url.path}" for loc in url.netloc.split(",")]
+            config["LOCATION"] = locations[0] if len(locations) == 1 else locations
 
         cache_options = {}
         if url.query:
@@ -308,11 +318,11 @@ class DjangoEnv(Env):
 
         if options:
             cache_options.update({k.upper(): v for k, v in options.items()})
-        config['OPTIONS'] = cache_options
+        config["OPTIONS"] = cache_options
         return config
 
     def email_url(self, var=DEFAULT_EMAIL_ENV, *, default=None, backend=None, options=None):
-        """ parse an email URL, based on django-environ
+        """parse an email URL, based on django-environ
         :param var: environment variable to use
         :param default: default value if var is unset
         :param backend: override parsed email backend
@@ -322,28 +332,28 @@ class DjangoEnv(Env):
         url = urlparse(self.check_var(var, default=default))
 
         path = smart_str(url.path[1:])
-        path = unquote_plus(path.split('?', 2)[0])
+        path = unquote_plus(path.split("?", 2)[0])
 
         # Update with environment configuration
         config = {
-            'EMAIL_FILE_PATH': path,
-            'EMAIL_HOST_USER': url.username,
-            'EMAIL_HOST_PASSWORD': url.password,
-            'EMAIL_HOST': url.hostname,
-            'EMAIL_PORT': self._int(url.port),
+            "EMAIL_FILE_PATH": path,
+            "EMAIL_HOST_USER": url.username,
+            "EMAIL_HOST_PASSWORD": url.password,
+            "EMAIL_HOST": url.hostname,
+            "EMAIL_PORT": self._int(url.port),
         }
 
         if backend:
-            config['EMAIL_BACKEND'] = backend
+            config["EMAIL_BACKEND"] = backend
         elif url.scheme in EMAIL_SCHEMES:
-            config['EMAIL_BACKEND'] = EMAIL_SCHEMES[url.scheme]
+            config["EMAIL_BACKEND"] = EMAIL_SCHEMES[url.scheme]
         else:
-            raise self.exception('Invalid email schema %s' % url.scheme)
+            raise self.exception("Invalid email schema %s" % url.scheme)
 
-        if url.scheme in ('smtps', 'smtp+tls'):
-            config['EMAIL_USE_TLS'] = True
-        elif url.scheme == 'smtp+ssl':
-            config['EMAIL_USE_SSL'] = True
+        if url.scheme in ("smtps", "smtp+tls"):
+            config["EMAIL_USE_TLS"] = True
+        elif url.scheme == "smtp+ssl":
+            config["EMAIL_USE_SSL"] = True
 
         email_options = {}
         if url.query:
@@ -357,12 +367,12 @@ class DjangoEnv(Env):
         if options:
             email_options.update(options)
         if email_options:
-            config['OPTIONS'] = {k.upper(): v for k, v in email_options.items()}
+            config["OPTIONS"] = {k.upper(): v for k, v in email_options.items()}
 
         return config
 
     def search_url(self, var=DEFAULT_SEARCH_ENV, *, default=None, engine=None, options=None):
-        """ parse a search URL from environment, based on django-environ
+        """parse a search URL from environment, based on django-environ
         :param var: environment variable to use
         :param default: default value if var is unset
         :param engine: override parsed storage engine
@@ -372,43 +382,41 @@ class DjangoEnv(Env):
         url = urlparse(self.check_var(var, default=default))
 
         path = smart_str(url.path[1:])
-        path = unquote_plus(path.split('?', 2)[0])
+        path = unquote_plus(path.split("?", 2)[0])
 
         if url.scheme not in SEARCH_SCHEMES:
-            raise self.exception('Invalid search schema %s' % url.scheme)
+            raise self.exception("Invalid search schema %s" % url.scheme)
 
-        config = {
-            "ENGINE": engine if engine else SEARCH_SCHEMES[url.scheme]
-        }
+        config = {"ENGINE": engine if engine else SEARCH_SCHEMES[url.scheme]}
 
         # check common params
         params = {}
         if url.query:
             params = {smart_str(k): smart_str(v, strings_only=True) for k, v in parse_qs(url.query)}
-            if 'EXCLUDED_INDEXES' in params.keys():
-                config['EXCLUDED_INDEXES'] = params['EXCLUDED_INDEXES'][0].split(',')
-            if 'INCLUDE_SPELLING' in params.keys():
-                config['INCLUDE_SPELLING'] = self.is_true(params['INCLUDE_SPELLING'][0])
-            if 'BATCH_SIZE' in params.keys():
-                config['BATCH_SIZE'] = self._int(params['BATCH_SIZE'][0])
+            if "EXCLUDED_INDEXES" in params.keys():
+                config["EXCLUDED_INDEXES"] = params["EXCLUDED_INDEXES"][0].split(",")
+            if "INCLUDE_SPELLING" in params.keys():
+                config["INCLUDE_SPELLING"] = self.is_true(params["INCLUDE_SPELLING"][0])
+            if "BATCH_SIZE" in params.keys():
+                config["BATCH_SIZE"] = self._int(params["BATCH_SIZE"][0])
 
-        if url.scheme == 'simple':
+        if url.scheme == "simple":
             return config
-        elif url.scheme in ['solr', 'elasticsearch', 'elasticsearch2']:
-            if 'KWARGS' in params.keys():
-                config['KWARGS'] = params['KWARGS'][0]
+        elif url.scheme in ["solr", "elasticsearch", "elasticsearch2"]:
+            if "KWARGS" in params.keys():
+                config["KWARGS"] = params["KWARGS"][0]
 
         # remove trailing slash
         if path.endswith("/"):
             path = path[:-1]
 
-        if url.scheme == 'solr':
-            config['URL'] = urlunparse(('http',) + url[1:2] + (path,) + ('', '', ''))
-            if 'TIMEOUT' in params.keys():
-                config['TIMEOUT'] = self._int(params['TIMEOUT'][0])
+        if url.scheme == "solr":
+            config["URL"] = urlunparse(("http",) + url[1:2] + (path,) + ("", "", ""))
+            if "TIMEOUT" in params.keys():
+                config["TIMEOUT"] = self._int(params["TIMEOUT"][0])
             return config
 
-        if url.scheme.startswith('elasticsearch'):
+        if url.scheme.startswith("elasticsearch"):
             split = path.rsplit("/", 1)
 
             if len(split) > 1:
@@ -418,21 +426,21 @@ class DjangoEnv(Env):
                 path = ""
                 index = split[0]
 
-            config['URL'] = urlunparse(('http',) + url[1:2] + (path,) + ('', '', ''))
-            if 'TIMEOUT' in params.keys():
-                config['TIMEOUT'] = self._int(params['TIMEOUT'][0])
-            config['INDEX_NAME'] = index
+            config["URL"] = urlunparse(("http",) + url[1:2] + (path,) + ("", "", ""))
+            if "TIMEOUT" in params.keys():
+                config["TIMEOUT"] = self._int(params["TIMEOUT"][0])
+            config["INDEX_NAME"] = index
         else:
-            config['PATH'] = '/' + path
+            config["PATH"] = "/" + path
 
-            if url.scheme == 'whoosh':
-                if 'STORAGE' in params.keys():
-                    config['STORAGE'] = params['STORAGE'][0]
-                if 'POST_LIMIT' in params.keys():
-                    config['POST_LIMIT'] = self._int(params['POST_LIMIT'][0])
-            elif url.scheme == 'xapian':
-                if 'FLAGS' in params.keys():
-                    config['FLAGS'] = params['FLAGS'][0]
+            if url.scheme == "whoosh":
+                if "STORAGE" in params.keys():
+                    config["STORAGE"] = params["STORAGE"][0]
+                if "POST_LIMIT" in params.keys():
+                    config["POST_LIMIT"] = self._int(params["POST_LIMIT"][0])
+            elif url.scheme == "xapian":
+                if "FLAGS" in params.keys():
+                    config["FLAGS"] = params["FLAGS"][0]
 
         if options:
             config.update({k.upper(): v for k, v in options.items()})
@@ -454,56 +462,50 @@ class DjangoEnv(Env):
         url = urlparse(url)
 
         path = smart_str(url.path[1:])
-        path = unquote_plus(path.split('?', 2)[0])
+        path = unquote_plus(path.split("?", 2)[0])
 
         conf = QUEUE_SCHEMES.get(url.scheme, {})
-        port = int(url.port) if url.port else conf.get('default-port', None)
+        port = int(url.port) if url.port else conf.get("default-port", None)
 
-        config = {
-            'QUEUE_BACKEND': backend if backend is None else conf['backend']
-        }
+        config = {"QUEUE_BACKEND": backend if backend is None else conf["backend"]}
 
-        if url.scheme.startswith('amazon'):
-            path = f'https://{url.hostname}'
+        if url.scheme.startswith("amazon"):
+            path = f"https://{url.hostname}"
             if port:
-                path += f':{port}'
-            config.update({
-                'AWS_SQS_ENDPOINT': path
-            })
+                path += f":{port}"
+            config.update({"AWS_SQS_ENDPOINT": path})
 
-        elif url.scheme.startswith('rabbit'):
+        elif url.scheme.startswith("rabbit"):
             config = {
-                'QUEUE_BACKEND': backend or config['QUEUE_BACKEND'],
-                'RABBITMQ_HOST': url.hostname or '',
-                'RABBITMQ_PORT': port
+                "QUEUE_BACKEND": backend or config["QUEUE_BACKEND"],
+                "RABBITMQ_HOST": url.hostname or "",
+                "RABBITMQ_PORT": port,
             }
             if not url.hostname:
-                config.update({
-                    'QUEUE_LOCATION': f"unix://{url.netloc}{url.path}",
-                    'RABBITMQ_LOCATION': f"unix://{url.netloc}{url.path}",
-                    'RABBITMQ_PORT': '',
-                })
+                config.update(
+                    {
+                        "QUEUE_LOCATION": f"unix://{url.netloc}{url.path}",
+                        "RABBITMQ_LOCATION": f"unix://{url.netloc}{url.path}",
+                        "RABBITMQ_PORT": "",
+                    }
+                )
 
-        elif url.scheme == 'redis':
-            scheme = url.scheme if url.hostname else 'unix'
-            locations = [f"{scheme}://{loc}{url.path}" for loc in url.netloc.split(',')]
+        elif url.scheme == "redis":
+            scheme = url.scheme if url.hostname else "unix"
+            locations = [f"{scheme}://{loc}{url.path}" for loc in url.netloc.split(",")]
             if not backend:
-                config.update({
-                    'QUEUE_LOCATION': locations[0] if len(locations) == 1 else locations
-                })
+                config.update({"QUEUE_LOCATION": locations[0] if len(locations) == 1 else locations})
 
         else:
-            config.update({
-                'PATH': path or '',
-                'HOST': url.hostname,
-                'PORT': port or ''
-            })
+            config.update({"PATH": path or "", "HOST": url.hostname, "PORT": port or ""})
 
         if url.username:
-            config.update({
-                'USER': url.username or '',
-                'PASSWORD': url.password or '',
-            })
+            config.update(
+                {
+                    "USER": url.username or "",
+                    "PASSWORD": url.password or "",
+                }
+            )
 
         queue_options = {}
         if url.query:
@@ -517,7 +519,7 @@ class DjangoEnv(Env):
         if options:
             queue_options.update(options)
         if queue_options:
-            config['OPTIONS'] = {k.upper(): v for k, v in queue_options.items()}
+            config["OPTIONS"] = {k.upper(): v for k, v in queue_options.items()}
 
         # return configuration.
         return config

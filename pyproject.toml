@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "django-settings-env"
-version = "4.4.1"
+version = "4.5.0"
 description = "12-factor.net settings support for Django based on envex"
 authors = ["David Nugent <davidn@uniquode.io>"]
 readme = "README.md"
@@ -11,8 +11,14 @@ Django = ">= 4.1"
 envex = ">= 1.5"
 django-class-settings = { version = "^0.2", optional = true }
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.test.dependencies]
 pytest = ">7.0"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.7.0"
+isort = "^5.12.0"
+ruff = "^0.0.285"
+pre-commit = "^3.3.3"
 
 [tool.poetry.extras]
 django-class-settings = ["django-class-settings"]

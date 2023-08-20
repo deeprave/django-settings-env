@@ -2,6 +2,6 @@
 dist
 __pycache__
 *.py[cod]
-.pytest_cache
+.*_cache
 /.venv/
 /.idea
