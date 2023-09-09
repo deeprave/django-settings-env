@@ -1,6 +1,7 @@
 import contextlib
 import io
 
+import envex
 import pytest
 from django.core.exceptions import ImproperlyConfigured
 
@@ -10,7 +11,6 @@ try:
     import class_settings
 except ImportError:
     class_settings = None
-
 
 TEST_ENV = [
     "# This is an example .env file",
@@ -36,7 +36,6 @@ def dotenv(ignored):
 def test_env_db(monkeypatch):
     monkeypatch.setattr(dot_env, "open_env", dotenv)
     env = Env()
-    env.read_env()
 
     database = env.database_url()
     assert database["NAME"] == "database_name"
@@ -49,7 +48,6 @@ def test_env_db(monkeypatch):
 def test_env_memcached(monkeypatch):
     monkeypatch.setattr(dot_env, "open_env", dotenv)
     env = Env()
-    env.read_env()
 
     cache = env.cache_url()
     assert cache["LOCATION"] == "localhost:11211"
@@ -59,7 +57,6 @@ def test_env_memcached(monkeypatch):
 def test_env_redis(monkeypatch):
     monkeypatch.setattr(dot_env, "open_env", dotenv)
     env = Env()
-    env.read_env()
 
     cache = env.cache_url("REDIS_URL")
     assert cache["LOCATION"] == "redis://localhost:6379/5"
@@ -70,7 +67,6 @@ def test_env_email(monkeypatch):
     monkeypatch.setattr(dot_env, "open_env", dotenv)
     with pytest.raises(ImproperlyConfigured):
         env = Env()
-        env.read_env()
         env.email_url()
 
     env["EMAIL_URL"] = "smtps://user@example.com:secret@smtp.example.com:587"
@@ -91,7 +87,6 @@ def test_env_search(monkeypatch):
     monkeypatch.setattr(dot_env, "open_env", dotenv)
     with pytest.raises(ImproperlyConfigured):
         env = Env()
-        env.read_env()
         env.search_url()
 
     env["SEARCH_URL"] = "elasticsearch2://127.0.0.1:9200/index"
@@ -105,7 +100,6 @@ def test_env_queue(monkeypatch):
     monkeypatch.setattr(dot_env, "open_env", dotenv)
     with pytest.raises(ImproperlyConfigured):
         env = Env()
-        env.read_env()
         env.queue_url()
     env["QUEUE_URL"] = "rabbitmq://localhost"
     queue = env.queue_url(backend="mq.backends.RabbitMQ.create_queue")
@@ -125,13 +119,16 @@ def test_env_queue(monkeypatch):
 
     env["AWS_SQS_URL"] = "amazon-sqs://2138954170.sqs.amazon.com/"
     queue = env.queue_url("AWS_SQS_URL", backend="mq.backends.sqs_backend.create_queue")
+    assert queue["QUEUE_BACKEND"] == "mq.backends.sqs_backend.create_backend"
+    assert queue["AWS_SQS_ENDPOINT"] == "https://2138954170.sqs.amazon.com"
 
 
 @pytest.mark.skipif(class_settings is None, reason="class_settings not installed")
 def test_class_settings_env(monkeypatch):
     monkeypatch.setattr(dot_env, "open_env", dotenv)
-    env = Env(readenv=True)
+    env = Env()
 
+    # noinspection PyUnresolvedReferences
     class MySettings(class_settings.Settings):
         DATABASE_URL = env()
         CACHES = {"default": env.cache_url()}
@@ -144,10 +141,97 @@ def test_class_settings_env(monkeypatch):
 @pytest.mark.skipif(class_settings is not None, reason="class_settings is installed")
 def test_module_settings_env(monkeypatch):
     monkeypatch.setattr(dot_env, "open_env", dotenv)
-    env = Env(readenv=True)
+    env = Env()
 
     global DATABASE_URL
     DATABASE_URL = env()
 
     DATABASE_URL = DATABASE_URL.setting("DATABASE_URL")
     assert DATABASE_URL == env["DATABASE_URL"]
+
+
+def test_env_get():
+    env = Env(environ={})
+    var, val = "MY_VARIABLE", "MY_VARIABLE_VALUE"
+    assert var not in env
+    value = env(var)
+    assert value is None
+    value = env(var, default=val)
+    assert value == val
+    assert var in env
+    del env[var]
+    assert var not in env
+    with pytest.raises(ImproperlyConfigured):
+        _ = env[var]
+    env[var] = val
+    val = env.pop(var)
+    assert value == val
+    assert var not in env
+
+
+def test_env_int(monkeypatch):
+    monkeypatch.setattr(envex.dot_env, "open_env", dotenv)
+    env = Env()
+    assert env.int("INTVALUE", default=99) == 225
+    assert env("INTVALUE", default=99, type=int) == 225
+    assert env.int("DEFAULTINTVALUE", default=981) == 981
+    assert env("DEFAULTINTVALUE", default=981, type=int) == 981
+    assert env("DEFAULTINTVALUE", type=int) == 981
+
+
+def test_env_float(monkeypatch):
+    monkeypatch.setattr(envex.dot_env, "open_env", dotenv)
+    env = Env()
+    assert env.float("FLOATVALUE", default=99.9999) == 54.92
+    assert env("FLOATVALUE", default=99.9999, type=float) == 54.92
+    assert env.float("DEFAULTFLOATVALUE", default=83.6) == 83.6
+    assert env("DEFAULTFLOATVALUE", default=83.6, type=float) == 83.6
+    assert env("DEFAULTFLOATVALUE", type=float) == 83.6
+
+
+def test_is_true():
+    env = Env()
+    assert env.is_true(1)
+    assert env.is_true("1")
+    assert not env.is_true(0)
+    assert not env.is_true("0")
+    assert not env.is_true(b"0")
+    assert not env.is_true(False)
+    assert not env.is_true("False")
+    assert not env.is_true(None)
+
+
+def test_env_bool(monkeypatch):
+    monkeypatch.setattr(envex.dot_env, "open_env", dotenv)
+    env = Env()
+    assert env.bool("BOOLVALUETRUE", default=False)
+    assert env.bool("DEFAULTBOOLVALUETRUE", default=True)
+    assert env("DEFAULTBOOLVALUETRUE", default=True, type=bool)
+    assert not env.bool("BOOLVALUEFALSE", default=True)
+    assert not env.bool("DEFAULTBOOLVALUEFALSE", default=False)
+    assert not env("DEFAULTBOOLVALUEFALSE", type=bool)
+
+
+def test_env_list(monkeypatch):
+    monkeypatch.setattr(envex.dot_env, "open_env", dotenv)
+    env = Env()
+
+    result = env.list("ALISTOFIPS")
+    assert isinstance(result, list)
+    assert len(result) == 3
+    assert result == ["::1", "127.0.0.1", "mydomain.com"]
+
+    result = env("ALISTOFIPS", type=list)
+    assert isinstance(result, list)
+    assert len(result) == 3
+    assert result == ["::1", "127.0.0.1", "mydomain.com"]
+
+    result = env.list("LISTOFQUOTEDVALUES")
+    assert isinstance(result, list)
+    assert len(result) == 4
+    assert result == ["1", "two", "3", "four"]
+
+    result = env("LISTOFQUOTEDVALUES", type=list)
+    assert isinstance(result, list)
+    assert len(result) == 4
+    assert result == ["1", "two", "3", "four"]

@@ -99,21 +99,49 @@ QUEUE_SCHEMES = {
     },
 }
 _QUEUE_BASE_OPTIONS = []
-
 _DEFAULT_ENV_PREFIX = "DJANGO_"
-
 _DEFAULT_PREFIX = object()
 
 
 class DjangoEnv(Env):
     """
-    Wrapper around os.environ with .env enhancement and django support
+    Wrapper around os.environ with .env enhancement django, and Hashicorp vault support
     """
 
     def __init__(self, *args, **kwargs):
+        """
+        @param args: dict (optional) environment variables
+        @param prefix: (optional) str prefix to add to all variables (default=DJANGO_)
+        @param exception: (optional) Exception class to raise on error (default=KeyError)
+        @param environ: dict | None default base environment (os.environ is default)
+        @param readenv: read values from .env files (default=**True**)
+        - if readenv=True, the following additional args may be used
+        @param env_file: str name of the environment file (.env or $ENV default)
+        @param search_path: None | Union[List[str], List[Path]], str] path(s) to search for env_file
+        @param overwrite: bool whether to overwrite existing environment variables (default=False)
+        @param parents: bool whether to search parent directories for env_file (default=**True**)
+        @param update: bool whether to update os.environ with values from env_file (default=False)
+        @param errors: bool whether to raise error on missing env_file (default=False)
+        - kwargs for vault/secrets manager:
+        @param url: (optional) vault url, default is $VAULT_ADDR
+        @param token: (optional) vault token, default is $VAULT_TOKEN or ~/.vault-token
+        @param cert: (optional) tuple (cert, key) or str path to client cert/key files
+        @param verify: (optional) bool | str whether to verify server cert or set ca cert path (default=True)
+        @param cache_enabled: (optional) bool whether to cache secrets (default=True)
+        @param base_path: (optional) str base path for secrets (default=None)
+        @param engine: (optional) str vault secrets engine (default=None)
+        @param mount_point: (optional) str vault secrets mount point (default=None, determined by engine)
+        @param working_dirs: (optional) bool whether to include PWD/CWD (default=True)
+        -
+        @param kwargs: (optional) environment variables to add/override
+        """
         self.prefix = kwargs.pop("prefix", _DEFAULT_ENV_PREFIX)
-        exception = kwargs.pop("exception", ImproperlyConfigured)
-        super().__init__(*args, exception=exception, **kwargs)
+        # by default, use Django config exception in preference to KeyError
+        kwargs.setdefault("exception", ImproperlyConfigured)
+        # change default to read .env files and search parents as well
+        kwargs.setdefault("readenv", True)
+        kwargs.setdefault("parents", True)
+        super().__init__(*args, **kwargs)
 
     def _with_prefix(self, var, prefix):
         if prefix is _DEFAULT_PREFIX:
@@ -148,26 +176,46 @@ class DjangoEnv(Env):
         var = self._with_prefix(var, prefix=prefix)
         return super().check_var(var, default=default, raise_error=raise_error)
 
-    def __call__(self, var=None, default=None, prefix=_DEFAULT_PREFIX, type=str, optional=False, raise_error=False):
+    django_env_typemap = {
+        "int": int,
+        "bool": bool,
+        "float": float,
+        "list": list,
+    }
+
+    # noinspection PyShadowingBuiltins
+    def __call__(self, var=None, default=None, **kwargs):
+        prefix = kwargs.pop("prefix", _DEFAULT_PREFIX)
         # This is tied to django-class-settings (optional dependency), which allows
-        # omitting the 'name' parameter and using the setting name instead'
+        # omitting the 'name' parameter and using the setting name instead
         if var is None:
-            kwargs = {"name": var, "prefix": prefix if prefix is None else self.prefix, "default": default}
+            kwds = {
+                "name": var,
+                "prefix": prefix if prefix is None else self.prefix,
+                "default": default,
+            }
             # try using class_settings version if installed
             try:
                 # noinspection PyUnresolvedReferences
                 from class_settings.env import DeferredEnv
 
-                return DeferredEnv(self, kwargs=kwargs, optional=optional)
+                return DeferredEnv(self, kwargs=kwds, optional=kwargs.get("optional", False))
             except ImportError:
                 pass
-            # otherwise use our own implementation (handles module level vars)
+            # otherwise, use our own implementation (handles module level vars)
             from .deferred import DeferredSetting
 
             # class settings not installed
-            return DeferredSetting(env=self, kwargs=kwargs)
+            return DeferredSetting(env=self, kwargs=kwds)
+
+        # set to the provided default if not already set
+        if default is not None and not self.is_set(var):
+            self.set(var, default)
+        # resolve entry point by the type
         try:
-            return self._typemap[type](var, default=default, prefix=prefix)
+            _type = kwargs.pop("type", "str")
+            _type = _type if isinstance(_type, str) else _type.__name__
+            return self.django_env_typemap[_type](self, var, default=default, prefix=prefix)
         except KeyError:
             pass
         return self.get(var, default=default, prefix=prefix)
@@ -176,11 +224,11 @@ class DjangoEnv(Env):
 
     def database_url(self, var=DEFAULT_DATABASE_ENV, *, default=None, engine=None, options=None):
         """
-        Parse a url, mostly based on dj-database-url
+        Parse the url, mostly based on dj-database-url
 
-        :param var: variable to use
+        :param var: Variable to use
         :param default: default value if var is unset
-        :param engine: override parsed database engine
+        :param engine: override database engine
         :param options: additional database options
         :return: dictionary of database options
         """
@@ -189,7 +237,7 @@ class DjangoEnv(Env):
         if url == "sqlite://:memory":
             return {"ENGINE": DB_SCHEMES["sqlite"], "NAME": ":memory:"}
 
-        # otherwise parse the url as normal
+        # otherwise, parse the url as normal
         config = {}
         url = urlparse(url)
 
@@ -458,7 +506,7 @@ class DjangoEnv(Env):
         """
         url = self.check_var(var, default=default)
 
-        # otherwise parse the url as normal
+        # otherwise, parse the url as normal
         url = urlparse(url)
 
         path = smart_str(url.path[1:])
