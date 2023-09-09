@@ -5,7 +5,6 @@
 - cleaned up env() call behavior
 - increase test coverage on core functinality
 - add build & publish github action
--
 
 ### Release 4.5.0
   - documentation cleanup
