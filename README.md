@@ -1,29 +1,27 @@
--------------------
-django-settings-env
--------------------
-12-factor.net settings environment handler for Django
+# django-settings-env
 
-envex
----------
+12-factor.net settings environment handler for Django settings.
 
-The functionality outlined in this section is derived from the dependent package
-`envex`, the docs for which are partially repeated below.
+[![PyPI version](https://badge.fury.io/py/django-settings-env.svg)](https://badge.fury.io/py/django-settings-env)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
-Skip to the Django Support section for functionality added by this extension.
+
+## [envex](https://pypi.org/envex)
+[![PyPI version](https://badge.fury.io/py/envex.svg)](https://badge.fury.io/py/envex)
+
+The primary functionality of this module is provided by the dependency `envex`,
+which provides settings via the OS environment, `.env` files and, optionally,
+HashiCorp vault (since `envex` v2.0).
 
 `envex` provides a convenient type-smart interface for handling the environment, and therefore
 configuration of any application using 12factor.net principals removing many environment-specific
 variables and security sensitive information from application code.
 
-This module provides some features not supported by other dotenv handlers
-(python-dotenv, etc.) including expansion of template variables, which is very useful
-for DRY.
-
-More detailed info can be found in the `envex` README.
+This module provides some features not supported by other dotenv handlers (python-dotenv, etc.)
+including expansion of template variables, which is very useful for DRY.
 
 
-Django Support
---------------
+## Django Settings
 
 By default, the Env class provided by this module can apply a given prefix (default "DJANGO_")
 to environment variables names, but will only be used in that form if the raw (no prefix)
