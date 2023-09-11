@@ -1,6 +1,11 @@
 # ChangeLog
 
+### Release 4.6.1
+
+- upgrade envex to 2.2.0 for improved Vault support
+
 ### Release 4.6
+
 - upgraded envex to 2.1.0, inherited hashicorp vault support
 - cleaned up env() call behavior
 - increase test coverage on core functinality
