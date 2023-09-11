@@ -5,7 +5,7 @@
 [![PyPI version](https://badge.fury.io/py/django-settings-env.svg)](https://badge.fury.io/py/django-settings-env)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
-## [envex](https://pypi.org/envex)
+## [envex](https://pypi.org/project/envex/)
 
 [![PyPI version](https://badge.fury.io/py/envex.svg)](https://badge.fury.io/py/envex)
 
@@ -54,7 +54,7 @@ The name of the file and paths searched is fully customisable.
 The url specified includes a schema that determines the "backend" class or module
 that handles the corresponding functionality as documented below.
 
-## `database_url`
+### `database_url`
 
 Evaluate a URL in the form
 
@@ -83,7 +83,7 @@ Schemas:
 | sqlite          | Sqlite                                      |
 | ldap            | django-ldap                                 |
 
-## `cache_url`
+### `cache_url`
 
 Evaluate a URL in the form
 
@@ -104,7 +104,7 @@ Schemas:
 | rediscache  | redis (django-redis)         |
 | redis       | redis (django-redis)         |
 
-## `email_url`
+### `email_url`
 
 Evaluate a URL in the form
 
@@ -127,7 +127,7 @@ Schemas:
 | amazonses   | Amazon Wimple Email Service   |
 | amazon-ses  | Amazon Wimple Email Service   |
 
-## `search_url`
+### `search_url`
 
 Evaluate a URL in the form
 
@@ -146,7 +146,7 @@ Schemas:
 | xapian         | Xapian search engine (haystack)              |
 | simple         | Simple search engine (haystack)              |
 
-## `queue_url`
+### `queue_url`
 
 Evaluate a URL in the form
 
@@ -163,11 +163,11 @@ Schemas:
 | amazonsqs  | Amazon SQS           |
 | amazon-sqs | alias for Amazon SQS |
 
-Django Class Settings
----------------------
 
-Support for the `django-class-settings` module is added to the env handler, allowing
-a much simplified use withing a class_settings.Settings class, e.g.:
+## Django Class Settings
+
+
+Support for the [`django-class-settings`](https://pypi.org/project/django-class-settings/) module is added to the env handler, allowing a much simplified use withing a class_settings.Settings class, e.g.:
 
 ```python
 from django_settings_env import Env
@@ -186,3 +186,8 @@ assign it to the MYSETTING value for the settings class.
 
 > :warning: The functional form of env() is now available even if `django-class-settings` is not
 > used or installed and is available at the settings module level.
+
+
+## Vault Support
+
+See the [envex](https://pypi.org/envex) documentation for details on how to configure this package with HashiCorp Vault.
