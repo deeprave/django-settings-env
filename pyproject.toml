@@ -1,14 +1,14 @@
 [tool.poetry]
 name = "django-settings-env"
-version = "4.6.1"
+version = "4.6.2"
 description = "12-factor.net settings support for Django with .env and HashiCorp Vault support"
 authors = ["David Nugent <davidn@uniquode.io>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-Django = ">= 3.1, <5.0"
-envex = ">= 2.1"
+Django = ">= 3.1"
+envex = ">= 2.2"
 django-class-settings = { version = "^0.2", optional = true }
 
 [tool.poetry.group.test.dependencies]
