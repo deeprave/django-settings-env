@@ -9,17 +9,17 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11", "3.10"]
-        poetry-version: ["1.5.1"]
+        python-version: ["3.12", "3.11", "3.10"]
+        poetry-version: ["1.7.1"]
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Setup python and poetry
-        uses: abatilo/actions-poetry@v2.3.0
+        uses: abatilo/actions-poetry@v2.4.0
         with:
           poetry-version: ${{ matrix.poetry-version }}
           python-version: ${{ matrix.python-version }}
