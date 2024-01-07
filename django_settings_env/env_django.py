@@ -4,12 +4,12 @@ Wrapper around os.environ with django config value parsers
 """
 from urllib.parse import parse_qs, unquote_plus, urlparse, urlunparse
 
-from django import get_version
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.encoding import smart_str
+from django.utils.version import get_complete_version
 from envex import Env
 
-DJANGO_VERSION = get_version()
+DJANGO_VERSION = get_complete_version()
 DEFAULT_DATABASE_ENV = "DATABASE_URL"
 DJANGO_POSTGRES = "django.db.backends.postgresql"
 MYSQL_DRIVER = "django.db.backends.mysql"
@@ -47,7 +47,7 @@ _DB_BASE_OPTIONS = [
 
 DEFAULT_CACHE_ENV = "CACHE_URL"
 REDIS_CACHE = "django_redis.cache.RedisCache"
-DJANGO_REDIS_CACHE = "django.core.cache.backends.redis.RedisCache."
+DJANGO_REDIS_CACHE = "django.core.cache.backends.redis.RedisCache"
 CACHE_SCHEMES = {
     "dbcache": "django.core.cache.backends.db.DatabaseCache",
     "dummycache": "django.core.cache.backends.dummy.DummyCache",

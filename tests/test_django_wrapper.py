@@ -4,6 +4,7 @@ import io
 import envex
 import pytest
 from django.core.exceptions import ImproperlyConfigured
+from django.utils.version import get_complete_version
 
 from django_settings_env import Env, dot_env
 
@@ -60,7 +61,10 @@ def test_env_redis(monkeypatch):
 
     cache = env.cache_url("REDIS_URL")
     assert cache["LOCATION"] == "redis://localhost:6379/5"
-    assert cache["BACKEND"] == "django_redis.cache.RedisCache"
+    if get_complete_version() >= (4, 0):
+        assert cache["BACKEND"] == "django.core.cache.backends.redis.RedisCache"
+    else:
+        assert cache["BACKEND"] == "django_redis.cache.RedisCache"
 
 
 def test_env_email(monkeypatch):
