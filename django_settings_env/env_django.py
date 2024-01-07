@@ -4,10 +4,12 @@ Wrapper around os.environ with django config value parsers
 """
 from urllib.parse import parse_qs, unquote_plus, urlparse, urlunparse
 
+from django import get_version
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.encoding import smart_str
 from envex import Env
 
+DJANGO_VERSION = get_version()
 DEFAULT_DATABASE_ENV = "DATABASE_URL"
 DJANGO_POSTGRES = "django.db.backends.postgresql"
 MYSQL_DRIVER = "django.db.backends.mysql"
@@ -45,6 +47,7 @@ _DB_BASE_OPTIONS = [
 
 DEFAULT_CACHE_ENV = "CACHE_URL"
 REDIS_CACHE = "django_redis.cache.RedisCache"
+DJANGO_REDIS_CACHE = "django.core.cache.backends.redis.RedisCache."
 CACHE_SCHEMES = {
     "dbcache": "django.core.cache.backends.db.DatabaseCache",
     "dummycache": "django.core.cache.backends.dummy.DummyCache",
@@ -52,8 +55,8 @@ CACHE_SCHEMES = {
     "locmemcache": "django.core.cache.backends.locmem.LocMemCache",
     "memcache": "django.core.cache.backends.memcached.MemcachedCache",
     "pymemcache": "django.core.cache.backends.memcached.PyLibMCCache",
-    "rediscache": REDIS_CACHE,
-    "redis": REDIS_CACHE,
+    "rediscache": REDIS_CACHE if DJANGO_VERSION[0] < 4 else DJANGO_REDIS_CACHE,
+    "redis": REDIS_CACHE if DJANGO_VERSION[0] < 4 else DJANGO_REDIS_CACHE,
 }
 _CACHE_BASE_OPTIONS = ["TIMEOUT", "KEY_PREFIX", "VERSION", "KEY_FUNCTION", "BINARY"]
 

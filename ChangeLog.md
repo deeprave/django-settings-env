@@ -1,5 +1,9 @@
 # ChangeLog
 
+### Release 4.7.0
+
+- Use django core redis cache if using django >= 4.0
+
 ### Release 4.6.1
 
 - upgrade envex to 2.2.0 for improved Vault support
