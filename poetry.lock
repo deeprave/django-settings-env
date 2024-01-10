@@ -214,13 +214,13 @@ python-dotenv = ">=0.7"
 
 [[package]]
 name = "envex"
-version = "2.2.1"
+version = "3.0.3"
 description = "Environment interface with .env and hashicorp vault support"
 optional = false
 python-versions = ">=3.10,<4.0"
 files = [
-    {file = "envex-2.2.1-py3-none-any.whl", hash = "sha256:bc359631202e9323bb7bf5d9ce7a14fc0936a0bf9f0219eb5d4e1063ada646ab"},
-    {file = "envex-2.2.1.tar.gz", hash = "sha256:a955ef0a256d4419e0e8295056c0c45cc0e2a205e95b0324370740a0d30df16a"},
+    {file = "envex-3.0.3-py3-none-any.whl", hash = "sha256:beacd236e413be3edf6c99bab85eb47b79e1a2ed72b670cb2a904fc407c93837"},
+    {file = "envex-3.0.3.tar.gz", hash = "sha256:61fdd3cc2e24e3faebc341d45c52919ac10ac6dda001bd83eeaf6192d6f6e16d"},
 ]
 
 [[package]]
@@ -607,4 +607,4 @@ django-class-settings = ["django-class-settings"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "6e305b3bdd5e66218a8b9488003bff759b48bb5ef46dc7fcbc5129552965d5da"
+content-hash = "19c0afa8baf8aec49d2e4bc8ca3e7a04bf2d814aed581658d0c53dfbe454326e"
