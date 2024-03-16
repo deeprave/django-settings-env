@@ -1,5 +1,9 @@
 # ChangeLog
 
+### Release 4.7.1
+
+- Add support for Env(timeout) parameter (vault connection timeout)
+
 ### Release 4.7.0
 
 - Use django core redis cache if using django >= 4.0

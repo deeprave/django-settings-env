@@ -134,6 +134,7 @@ class DjangoEnv(Env):
         @param base_path: (optional) str base path for secrets (default=None)
         @param engine: (optional) str vault secrets engine (default=None)
         @param mount_point: (optional) str vault secrets mount point (default=None, determined by engine)
+        @param timeout: (optional) int timeout for connecting to vault (default=5)
         @param working_dirs: (optional) bool whether to include PWD/CWD (default=True)
         -
         @param kwargs: (optional) environment variables to add/override
