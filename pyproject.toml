@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "django-settings-env"
-version = "4.7.2"
+version = "4.7.3"
 description = "12-factor.net settings support for Django with .env and HashiCorp Vault support"
 authors = ["David Nugent <davidn@uniquode.io>"]
 readme = "README.md"
@@ -28,6 +28,7 @@ hvac = ">= 1.1.1"
 
 [tool.pytest.ini-options]
 minversion = "7.0"
+addopts = "-ra -q"
 pythonpath = [ "django_settings_env" ]
 testpaths = [ "tests" ]
 
