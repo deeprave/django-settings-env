@@ -214,7 +214,11 @@ class DjangoEnv(Env):
             return DeferredSetting(env=self, kwargs=kwds)
 
         # set to the provided default if not already set
-        if default is not None and not self.is_set(var):
+        if (
+            default is not None
+            and not self.is_set(var)
+            and not self.is_set(self._with_prefix(var, prefix=prefix))
+        ):
             self.set(var, default)
         # resolve entry point by the type
         with contextlib.suppress(KeyError):
@@ -299,9 +303,9 @@ class DjangoEnv(Env):
 
             # Support for Postgres Schema URLs
             if "currentSchema" in db_options and engine in (
-                "django.contrib.gis.db.backends.postgis",
-                "django.db.backends.postgresql_psycopg2",
-                "django_redshift_backend",
+                    "django.contrib.gis.db.backends.postgis",
+                    "django.db.backends.postgresql_psycopg2",
+                    "django_redshift_backend",
             ):
                 db_options["options"] = "-c search_path={0}".format(db_options.pop("currentSchema"))
 
@@ -521,7 +525,7 @@ class DjangoEnv(Env):
         return self._parse_options(url.query, config, options, _QUEUE_BASE_OPTIONS)
 
     @staticmethod
-    def _parse_options(query: str, config: dict, options: dict|None, base_options: List[str]):
+    def _parse_options(query: str, config: dict, options: dict | None, base_options: List[str]):
         qs_options = {}
         if query:
             for key, values in parse_qs(query).items():
