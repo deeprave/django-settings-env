@@ -4,6 +4,7 @@ Wrapper around os.environ with django config value parsers
 """
 
 import contextlib
+from typing import List
 from urllib.parse import parse_qs, unquote_plus, urlparse, urlunparse
 
 from django.core.exceptions import ImproperlyConfigured
@@ -104,8 +105,8 @@ QUEUE_SCHEMES = {
     },
 }
 _QUEUE_BASE_OPTIONS = []
-_DEFAULT_ENV_PREFIX = "DJANGO_"
-_DEFAULT_PREFIX = object()
+_DEFAULT_PREFIX = "DJANGO_"
+_USE_DEFAULT_PREFIX = object()
 
 
 class DjangoEnv(Env):
@@ -141,7 +142,7 @@ class DjangoEnv(Env):
         -
         @param kwargs: (optional) environment variables to add/override
         """
-        self.prefix = kwargs.pop("prefix", _DEFAULT_ENV_PREFIX)
+        self.prefix = kwargs.pop("prefix", _DEFAULT_PREFIX)
         # by default, use Django config exception in preference to KeyError
         kwargs.setdefault("exception", ImproperlyConfigured)
         # change default to read .env files and search parents as well
@@ -150,32 +151,32 @@ class DjangoEnv(Env):
         super().__init__(*args, **kwargs)
 
     def _with_prefix(self, var, prefix):
-        if prefix is _DEFAULT_PREFIX:
+        if prefix is _USE_DEFAULT_PREFIX:
             prefix = self.prefix
         if var and prefix and not var.startswith(prefix) and not self.is_set(var):
             var = f"{prefix}{var}"
         return var
 
-    def get(self, var, default=None, prefix=_DEFAULT_PREFIX):
+    def get(self, var, default=None, prefix=_USE_DEFAULT_PREFIX):
         return super().get(self._with_prefix(var, prefix=prefix), default)
 
-    def int(self, var, default=None, prefix=_DEFAULT_PREFIX) -> int:
+    def int(self, var, default=None, prefix=_USE_DEFAULT_PREFIX) -> int:
         val = self.get(var, default, prefix=prefix)
         return self._int(val)
 
-    def float(self, var, default=None, prefix=_DEFAULT_PREFIX) -> float:
+    def float(self, var, default=None, prefix=_USE_DEFAULT_PREFIX) -> float:
         val = self.get(var, default, prefix=prefix)
         return self._float(val)
 
-    def bool(self, var, default=None, prefix=_DEFAULT_PREFIX) -> bool:
+    def bool(self, var, default=None, prefix=_USE_DEFAULT_PREFIX) -> bool:
         val = self.get(var, default, prefix=prefix)
         return val if isinstance(val, (bool, int)) else self.is_true(val)
 
-    def list(self, var, default=None, prefix=_DEFAULT_PREFIX) -> list:
+    def list(self, var, default=None, prefix=_USE_DEFAULT_PREFIX) -> list:
         val = self.get(var, default, prefix=prefix)
         return val if isinstance(val, (list, tuple)) else self._list(val)
 
-    def check_var(self, var, default=None, prefix=_DEFAULT_PREFIX, raise_error=True):
+    def check_var(self, var, default=None, prefix=_USE_DEFAULT_PREFIX, raise_error=True):
         """
         override to insert prefix unless the raw var is set
         """
@@ -191,13 +192,13 @@ class DjangoEnv(Env):
 
     # noinspection PyShadowingBuiltins
     def __call__(self, var=None, default=None, **kwargs):
-        prefix = kwargs.pop("prefix", _DEFAULT_PREFIX)
+        prefix = kwargs.pop("prefix", _USE_DEFAULT_PREFIX)
         # This is tied to django-class-settings (optional dependency), which allows
         # omitting the 'name' parameter and using the setting name instead
         if var is None:
             kwds = {
                 "name": var,
-                "prefix": prefix if prefix is None else self.prefix,
+                "prefix": prefix if prefix is _USE_DEFAULT_PREFIX else self.prefix,
                 "default": default,
             }
             # try using class_settings version if installed
@@ -240,7 +241,7 @@ class DjangoEnv(Env):
             return {"ENGINE": DB_SCHEMES["sqlite"], "NAME": ":memory:"}
 
         # otherwise, parse the url as normal
-        config = {}
+        config: dict = {}
         url = urlparse(url)
 
         path = smart_str(url.path[1:])
@@ -268,15 +269,13 @@ class DjangoEnv(Env):
         port = str(url.port) if url.port and engine == DB_SCHEMES["oracle"] else url.port
 
         # Update with configuration.
-        config.update(
-            {
-                "NAME": path or "",
-                "USER": url.username or "",
-                "PASSWORD": url.password or "",
-                "HOST": hostname,
-                "PORT": port or "",
-            }
-        )
+        config |= {
+            "NAME": path or "",
+            "USER": url.username or "",
+            "PASSWORD": url.password or "",
+            "HOST": hostname,
+            "PORT": port or "",
+        }
 
         if url.scheme == "postgres" and path.startswith("/"):
             config["HOST"], config["NAME"] = path.rsplit("/", 1)
@@ -294,9 +293,9 @@ class DjangoEnv(Env):
         if url.query:
             for key, values in parse_qs(url.query).items():
                 if key.upper() in _DB_BASE_OPTIONS:
-                    config.update({key.upper(): values[0]})
+                    config[key.upper()] = values[0]
                 else:
-                    db_options.update({key: self._int(values[0])})
+                    db_options[key] = self._int(values[0])
 
             # Support for Postgres Schema URLs
             if "currentSchema" in db_options and engine in (
@@ -309,9 +308,9 @@ class DjangoEnv(Env):
         if options:
             for key, value in options.items():
                 if key.upper() in _DB_BASE_OPTIONS:
-                    config.update({key.upper(): value})
+                    config[key.upper()] = value
                 else:
-                    db_options.update({key: value})
+                    db_options[key] = value
         if db_options:
             config["OPTIONS"] = {k.upper(): v for k, v in db_options.items()}
         if engine:
@@ -334,42 +333,22 @@ class DjangoEnv(Env):
             location = location[0]
 
         config = {
-            "BACKEND": backend if backend else CACHE_SCHEMES[url.scheme],
+            "BACKEND": backend or CACHE_SCHEMES[url.scheme],
             "LOCATION": location,
         }
 
         # Add the drive to LOCATION
         if url.scheme == "filecache":
-            config.update(
-                {
-                    "LOCATION": url.netloc + url.path,
-                }
-            )
+            config["LOCATION"] = url.netloc + url.path
 
         if url.path and url.scheme in ["unix", "memcache", "pymemcache"]:
-            config.update(
-                {
-                    "LOCATION": f"unix:{url.path}",
-                }
-            )
+            config["LOCATION"] = f"unix:{url.path}"
         elif url.scheme.startswith("redis"):
             scheme = url.scheme.replace("cache", "") if url.hostname else "unix"
             locations = [f"{scheme}://{smart_str(loc)}{url.path}" for loc in url.netloc.split(",")]
             config["LOCATION"] = locations[0] if len(locations) == 1 else locations
 
-        cache_options = {}
-        if url.query:
-            for key, values in parse_qs(url.query).items():
-                opt = {smart_str(key).upper(): smart_str(values[0], strings_only=True)}
-                if key.upper() in _CACHE_BASE_OPTIONS:
-                    config.update(opt)
-                else:
-                    cache_options.update(opt)
-
-        if options:
-            cache_options.update({k.upper(): v for k, v in options.items()})
-        config["OPTIONS"] = cache_options
-        return config
+        return self._parse_options(url.query, config, options, _CACHE_BASE_OPTIONS)
 
     def email_url(self, var=DEFAULT_EMAIL_ENV, *, default=None, backend=None, options=None):
         """parse an email URL, based on django-environ
@@ -398,28 +377,14 @@ class DjangoEnv(Env):
         elif url.scheme in EMAIL_SCHEMES:
             config["EMAIL_BACKEND"] = EMAIL_SCHEMES[url.scheme]
         else:
-            raise self.exception("Invalid email schema %s" % url.scheme)
+            raise self.exception(f"Invalid email schema {url.scheme}")
 
         if url.scheme in ("smtps", "smtp+tls"):
             config["EMAIL_USE_TLS"] = True
         elif url.scheme == "smtp+ssl":
             config["EMAIL_USE_SSL"] = True
 
-        email_options = {}
-        if url.query:
-            for key, values in parse_qs(url.query).items():
-                opt = {smart_str(key).upper(): self._int(values[0])}
-                if key.upper() in _EMAIL_BASE_OPTIONS:
-                    config.update(opt)
-                else:
-                    email_options.update(opt)
-
-        if options:
-            email_options.update(options)
-        if email_options:
-            config["OPTIONS"] = {k.upper(): v for k, v in email_options.items()}
-
-        return config
+        return self._parse_options(url.query, config, options, _EMAIL_BASE_OPTIONS)
 
     def search_url(self, var=DEFAULT_SEARCH_ENV, *, default=None, engine=None, options=None):
         """parse a search URL from environment, based on django-environ
@@ -435,25 +400,25 @@ class DjangoEnv(Env):
         path = unquote_plus(path.split("?", 2)[0])
 
         if url.scheme not in SEARCH_SCHEMES:
-            raise self.exception("Invalid search schema %s" % url.scheme)
+            raise self.exception(f"Invalid search schema {url.scheme}")
 
-        config = {"ENGINE": engine if engine else SEARCH_SCHEMES[url.scheme]}
+        config = {"ENGINE": engine or SEARCH_SCHEMES[url.scheme]}
 
         # check common params
         params = {}
         if url.query:
             params = {smart_str(k): smart_str(v, strings_only=True) for k, v in parse_qs(url.query)}
-            if "EXCLUDED_INDEXES" in params.keys():
+            if "EXCLUDED_INDEXES" in params:
                 config["EXCLUDED_INDEXES"] = params["EXCLUDED_INDEXES"][0].split(",")
-            if "INCLUDE_SPELLING" in params.keys():
+            if "INCLUDE_SPELLING" in params:
                 config["INCLUDE_SPELLING"] = self.is_true(params["INCLUDE_SPELLING"][0])
-            if "BATCH_SIZE" in params.keys():
+            if "BATCH_SIZE" in params:
                 config["BATCH_SIZE"] = self._int(params["BATCH_SIZE"][0])
 
         if url.scheme == "simple":
             return config
         elif url.scheme in ["solr", "elasticsearch", "elasticsearch2"]:
-            if "KWARGS" in params.keys():
+            if "KWARGS" in params:
                 config["KWARGS"] = params["KWARGS"][0]
 
         # remove trailing slash
@@ -462,7 +427,7 @@ class DjangoEnv(Env):
 
         if url.scheme == "solr":
             config["URL"] = urlunparse(("http",) + url[1:2] + (path,) + ("", "", ""))
-            if "TIMEOUT" in params.keys():
+            if "TIMEOUT" in params:
                 config["TIMEOUT"] = self._int(params["TIMEOUT"][0])
             return config
 
@@ -477,23 +442,23 @@ class DjangoEnv(Env):
                 index = split[0]
 
             config["URL"] = urlunparse(("http",) + url[1:2] + (path,) + ("", "", ""))
-            if "TIMEOUT" in params.keys():
+            if "TIMEOUT" in params:
                 config["TIMEOUT"] = self._int(params["TIMEOUT"][0])
             config["INDEX_NAME"] = index
         else:
-            config["PATH"] = "/" + path
+            config["PATH"] = f"/{path}"
 
             if url.scheme == "whoosh":
-                if "STORAGE" in params.keys():
+                if "STORAGE" in params:
                     config["STORAGE"] = params["STORAGE"][0]
-                if "POST_LIMIT" in params.keys():
+                if "POST_LIMIT" in params:
                     config["POST_LIMIT"] = self._int(params["POST_LIMIT"][0])
             elif url.scheme == "xapian":
-                if "FLAGS" in params.keys():
+                if "FLAGS" in params:
                     config["FLAGS"] = params["FLAGS"][0]
 
         if options:
-            config.update({k.upper(): v for k, v in options.items()})
+            config |= {k.upper(): v for k, v in options.items()}
 
         return config
 
@@ -523,7 +488,7 @@ class DjangoEnv(Env):
             path = f"https://{url.hostname}"
             if port:
                 path += f":{port}"
-            config.update({"AWS_SQS_ENDPOINT": path})
+            config["AWS_SQS_ENDPOINT"] = path
 
         elif url.scheme.startswith("rabbit"):
             config = {
@@ -532,44 +497,42 @@ class DjangoEnv(Env):
                 "RABBITMQ_PORT": port,
             }
             if not url.hostname:
-                config.update(
-                    {
-                        "QUEUE_LOCATION": f"unix://{url.netloc}{url.path}",
-                        "RABBITMQ_LOCATION": f"unix://{url.netloc}{url.path}",
-                        "RABBITMQ_PORT": "",
-                    }
-                )
+                config |= {
+                    "QUEUE_LOCATION": f"unix://{url.netloc}{url.path}",
+                    "RABBITMQ_LOCATION": f"unix://{url.netloc}{url.path}",
+                    "RABBITMQ_PORT": "",
+                }
 
         elif url.scheme == "redis":
             scheme = url.scheme if url.hostname else "unix"
             locations = [f"{scheme}://{loc}{url.path}" for loc in url.netloc.split(",")]
             if not backend:
-                config.update({"QUEUE_LOCATION": locations[0] if len(locations) == 1 else locations})
+                config["QUEUE_LOCATION"] = locations[0] if len(locations) == 1 else locations
 
         else:
-            config.update({"PATH": path or "", "HOST": url.hostname, "PORT": port or ""})
+            config |= {"PATH": path or "", "HOST": url.hostname, "PORT": port or ""}
 
         if url.username:
-            config.update(
-                {
-                    "USER": url.username or "",
-                    "PASSWORD": url.password or "",
-                }
-            )
+            config |= {
+                "USER": url.username or "",
+                "PASSWORD": url.password or "",
+            }
 
-        queue_options = {}
-        if url.query:
-            for key, values in parse_qs(url.query).items():
+        return self._parse_options(url.query, config, options, _QUEUE_BASE_OPTIONS)
+
+    @staticmethod
+    def _parse_options(query: str, config: dict, options: dict|None, base_options: List[str]):
+        qs_options = {}
+        if query:
+            for key, values in parse_qs(query).items():
                 opt = {smart_str(key).upper(): smart_str(values[0], strings_only=True)}
-                if key.upper() in _QUEUE_BASE_OPTIONS:
-                    config.update(opt)
+                if key.upper() in base_options:
+                    config |= opt
                 else:
-                    queue_options.update(opt)
+                    qs_options |= opt
 
-        if options:
-            queue_options.update(options)
-        if queue_options:
-            config["OPTIONS"] = {k.upper(): v for k, v in queue_options.items()}
+        qs_options.update(options or {})
+        if qs_options:
+            config["OPTIONS"] = {k.upper(): v for k, v in qs_options.items()}
 
-        # return configuration.
         return config
