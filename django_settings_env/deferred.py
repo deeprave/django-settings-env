@@ -13,9 +13,9 @@ def deferred_handler():
     # at least one DeferredSetting is being used, so override the __getattr__ handler for the setting module
     # to catch any DeferredSetting use and return an appropriate value from the environment
     if not getattr(deferred_handler, "enabled", False):
-        # need to overrite both because __getattr__ is not called if the setting is defined (no longer lazy)
-        LazySettings.__getattr__ = deferred_getattr(LazySettings.__getattr__)
-        LazySettings.__getattribute__ = deferred_getattribute(LazySettings.__getattribute__)
+        # need to overwrite both because __getattr__ is not called if the setting is defined (no longer lazy)
+        setattr(LazySettings, '__getattr__', deferred_getattr(LazySettings.__getattr__))
+        setattr(LazySettings, '__getattribute__', deferred_getattribute(LazySettings.__getattribute__))
         deferred_handler.enabled = True
 
 

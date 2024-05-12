@@ -50,21 +50,22 @@ def test_env_memcached(monkeypatch):
     monkeypatch.setattr(dot_env, "open_env", dotenv)
     env = Env()
 
-    cache = env.cache_url()
-    assert cache["LOCATION"] == "localhost:11211"
-    assert cache["BACKEND"] == "django.core.cache.backends.memcached.MemcachedCache"
+    django_cache = env.cache_url()
+    assert django_cache["LOCATION"] == "localhost:11211"
+    assert django_cache["BACKEND"] == "django.core.cache.backends.memcached.MemcachedCache"
 
 
 def test_env_redis(monkeypatch):
     monkeypatch.setattr(dot_env, "open_env", dotenv)
     env = Env()
 
-    cache = env.cache_url("REDIS_URL")
-    assert cache["LOCATION"] == "redis://localhost:6379/5"
+    django_cache = env.cache_url("REDIS_URL")
+    assert django_cache["LOCATION"] == "redis://localhost:6379/5"
+    # sourcery skip: no-conditionals-in-tests
     if get_complete_version() >= (4, 0):
-        assert cache["BACKEND"] == "django.core.cache.backends.redis.RedisCache"
+        assert django_cache["BACKEND"] == "django.core.cache.backends.redis.RedisCache"
     else:
-        assert cache["BACKEND"] == "django_redis.cache.RedisCache"
+        assert django_cache["BACKEND"] == "django_redis.cache.RedisCache"
 
 
 def test_env_email(monkeypatch):
@@ -147,6 +148,7 @@ def test_module_settings_env(monkeypatch):
     monkeypatch.setattr(dot_env, "open_env", dotenv)
     env = Env()
 
+    # noinspection PyGlobalUndefined
     global DATABASE_URL
     DATABASE_URL = env()
 

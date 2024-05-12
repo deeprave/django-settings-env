@@ -2,6 +2,8 @@
 """
 Wrapper around os.environ with django config value parsers
 """
+
+import contextlib
 from urllib.parse import parse_qs, unquote_plus, urlparse, urlunparse
 
 from django.core.exceptions import ImproperlyConfigured
@@ -199,13 +201,11 @@ class DjangoEnv(Env):
                 "default": default,
             }
             # try using class_settings version if installed
-            try:
+            with contextlib.suppress(ImportError):
                 # noinspection PyUnresolvedReferences
                 from class_settings.env import DeferredEnv
 
                 return DeferredEnv(self, kwargs=kwds, optional=kwargs.get("optional", False))
-            except ImportError:
-                pass
             # otherwise, use our own implementation (handles module level vars)
             from .deferred import DeferredSetting
 
@@ -216,12 +216,10 @@ class DjangoEnv(Env):
         if default is not None and not self.is_set(var):
             self.set(var, default)
         # resolve entry point by the type
-        try:
+        with contextlib.suppress(KeyError):
             _type = kwargs.pop("type", "str")
             _type = _type if isinstance(_type, str) else _type.__name__
             return self.django_env_typemap[_type](self, var, default=default, prefix=prefix)
-        except KeyError:
-            pass
         return self.get(var, default=default, prefix=prefix)
 
     # Django-specific additions
