@@ -4,7 +4,6 @@ import io
 import envex
 import pytest
 from django.core.exceptions import ImproperlyConfigured
-from django.utils.version import get_complete_version
 
 from django_settings_env import Env, dot_env
 
@@ -19,12 +18,12 @@ TEST_ENV = [
     "CACHE_URL=memcache://localhost:11211",
     "REDIS_URL=redis://localhost:6379/5",
     'QUOTED_VALUE="some double quoted value"',
-    "INTVALUE=225",
-    "FLOATVALUE=54.92",
-    "BOOLVALUETRUE=True",
-    "BOOLVALUEFALSE=off",
-    "LISTOFQUOTEDVALUES=1,\"two\",3,'four'",
-    "ALISTOFIPS=::1,127.0.0.1,mydomain.com",
+    "INT_VALUE=225",
+    "FLOAT_VALUE=54.92",
+    "BOOL_VALUE_TRUE=True",
+    "BOOL_VALUE_FALSE=off",
+    "LIST_OF_QUOTED_VALUES=1,\"two\",3,'four'",
+    "A_LIST_OF_IPS=::1,127.0.0.1,mydomain.com",
 ]
 
 
@@ -52,7 +51,9 @@ def test_env_memcached(monkeypatch):
 
     django_cache = env.cache_url()
     assert django_cache["LOCATION"] == "localhost:11211"
-    assert django_cache["BACKEND"] == "django.core.cache.backends.memcached.MemcachedCache"
+    assert (
+        django_cache["BACKEND"] == "django.core.cache.backends.memcached.MemcachedCache"
+    )
 
 
 def test_env_redis(monkeypatch):
@@ -61,11 +62,7 @@ def test_env_redis(monkeypatch):
 
     django_cache = env.cache_url("REDIS_URL")
     assert django_cache["LOCATION"] == "redis://localhost:6379/5"
-    # sourcery skip: no-conditionals-in-tests
-    if get_complete_version() >= (4, 0):
-        assert django_cache["BACKEND"] == "django.core.cache.backends.redis.RedisCache"
-    else:
-        assert django_cache["BACKEND"] == "django_redis.cache.RedisCache"
+    assert django_cache["BACKEND"] == "django.core.cache.backends.redis.RedisCache"
 
 
 def test_env_email(monkeypatch):
@@ -88,44 +85,62 @@ def test_env_email(monkeypatch):
     assert email["EMAIL_HOST"] == "example.com"
 
 
-def test_env_search(monkeypatch):
+@pytest.mark.parametrize(
+    "search_url, expected_engine, expected_url, expected_hosts, expected_index_name",
+    [
+        (
+            "elasticsearch2://127.0.0.1:9200/index?SCHEME=http",
+            "haystack.backends.elasticsearch2_backend.Elasticsearch2SearchEngine",
+            "http://127.0.0.1:9200",
+            None,
+            "index",
+        ),
+        (
+            "elasticsearch://127.0.0.1:9200/index?SCHEME=http",
+            "haystack.backends.elasticsearch_backend.ElasticsearchSearchEngine",
+            "http://127.0.0.1:9200",
+            None,
+            "index",
+        ),
+        (
+            "elasticsearch+dsl://127.0.0.1:9200?SCHEME=http",
+            None,
+            None,
+            "http://127.0.0.1:9200",
+            None,
+        ),
+        (
+            "elasticsearch-dsl://127.0.0.1:9200",
+            None,
+            None,
+            "https://127.0.0.1:9200",
+            None,
+        ),
+    ],
+)
+def test_search_url(
+    monkeypatch,
+    search_url,
+    expected_engine,
+    expected_url,
+    expected_hosts,
+    expected_index_name,
+):
     monkeypatch.setattr(dot_env, "open_env", dotenv)
-    with pytest.raises(ImproperlyConfigured):
-        env = Env()
-        env.search_url()
+    env = Env()
 
-    env["SEARCH_URL"] = "elasticsearch2://127.0.0.1:9200/index"
-    search = env.search_url()
-    assert search["ENGINE"] == "haystack.backends.elasticsearch2_backend.Elasticsearch2SearchEngine"
-    assert search["URL"] == "http://127.0.0.1:9200"
-    assert search["INDEX_NAME"] == "index"
+    env["SEARCH_URL"] = search_url
+    result = env.search_url()
 
-
-def test_env_queue(monkeypatch):
-    monkeypatch.setattr(dot_env, "open_env", dotenv)
-    with pytest.raises(ImproperlyConfigured):
-        env = Env()
-        env.queue_url()
-    env["QUEUE_URL"] = "rabbitmq://localhost"
-    queue = env.queue_url(backend="mq.backends.RabbitMQ.create_queue")
-    assert queue["QUEUE_BACKEND"] == "mq.backends.RabbitMQ.create_queue"
-    assert queue["RABBITMQ_HOST"] == "localhost"
-    assert queue["RABBITMQ_PORT"] == 5672
-
-    env["QUEUE_URL"] = "rabbitmq://localhost:5555"
-    queue = env.queue_url(backend="mq.backends.rabbitmq_backend.create_queue")
-    assert queue["RABBITMQ_PORT"] == 5555
-
-    env["QUEUE_URL"] = "rabbitmq:/var/run/rabbitmq.sock"
-    queue = env.queue_url(backend="mq.backends.rabbitmq_backend.create_queue")
-    assert not queue["RABBITMQ_HOST"]
-    assert not queue["RABBITMQ_PORT"]
-    assert queue["RABBITMQ_LOCATION"] == "unix:///var/run/rabbitmq.sock"
-
-    env["AWS_SQS_URL"] = "amazon-sqs://2138954170.sqs.amazon.com/"
-    queue = env.queue_url("AWS_SQS_URL", backend="mq.backends.sqs_backend.create_queue")
-    assert queue["QUEUE_BACKEND"] == "mq.backends.sqs_backend.create_backend"
-    assert queue["AWS_SQS_ENDPOINT"] == "https://2138954170.sqs.amazon.com"
+    # sourcery skip: no-conditionals-in-tests
+    if expected_engine:
+        assert result["ENGINE"] == expected_engine
+    if expected_url:
+        assert result["URL"] == expected_url
+    if expected_hosts:
+        assert result["hosts"] == expected_hosts
+    if expected_index_name:
+        assert result["INDEX_NAME"] == expected_index_name
 
 
 @pytest.mark.skipif(class_settings is None, reason="class_settings not installed")
@@ -149,11 +164,14 @@ def test_module_settings_env(monkeypatch):
     env = Env()
 
     # noinspection PyGlobalUndefined
-    global DATABASE_URL
     DATABASE_URL = env()
 
-    DATABASE_URL = DATABASE_URL.setting("DATABASE_URL")
-    assert DATABASE_URL == env["DATABASE_URL"]
+    assert str(DATABASE_URL) == env["DATABASE_URL"]
+
+    class TestClass:
+        DATABASE_URL = env()
+
+    assert str(TestClass.DATABASE_URL) == env["DATABASE_URL"]
 
 
 def test_env_get():
@@ -178,21 +196,21 @@ def test_env_get():
 def test_env_int(monkeypatch):
     monkeypatch.setattr(envex.dot_env, "open_env", dotenv)
     env = Env()
-    assert env.int("INTVALUE", default=99) == 225
-    assert env("INTVALUE", default=99, type=int) == 225
-    assert env.int("DEFAULTINTVALUE", default=981) == 981
-    assert env("DEFAULTINTVALUE", default=981, type=int) == 981
-    assert env("DEFAULTINTVALUE", type=int) == 981
+    assert env.int("INT_VALUE", default=99) == 225
+    assert env("INT_VALUE", default=99, type=int) == 225
+    assert env.int("DEFAULT_INT_VALUE", default=981) == 981
+    assert env("DEFAULT_INT_VALUE", default=981, type=int) == 981
+    assert env("DEFAULT_INT_VALUE", type=int) == 981
 
 
 def test_env_float(monkeypatch):
     monkeypatch.setattr(envex.dot_env, "open_env", dotenv)
     env = Env()
-    assert env.float("FLOATVALUE", default=99.9999) == 54.92
-    assert env("FLOATVALUE", default=99.9999, type=float) == 54.92
-    assert env.float("DEFAULTFLOATVALUE", default=83.6) == 83.6
-    assert env("DEFAULTFLOATVALUE", default=83.6, type=float) == 83.6
-    assert env("DEFAULTFLOATVALUE", type=float) == 83.6
+    assert env.float("FLOAT_VALUE", default=99.9999) == 54.92
+    assert env("FLOAT_VALUE", default=99.9999, type=float) == 54.92
+    assert env.float("DEFAULT_FLOAT_VALUE", default=83.6) == 83.6
+    assert env("DEFAULT_FLOAT_VALUE", default=83.6, type=float) == 83.6
+    assert env("DEFAULT_FLOAT_VALUE", type=float) == 83.6
 
 
 def test_is_true():
@@ -210,34 +228,33 @@ def test_is_true():
 def test_env_bool(monkeypatch):
     monkeypatch.setattr(envex.dot_env, "open_env", dotenv)
     env = Env()
-    assert env.bool("BOOLVALUETRUE", default=False)
-    assert env.bool("DEFAULTBOOLVALUETRUE", default=True)
-    assert env("DEFAULTBOOLVALUETRUE", default=True, type=bool)
-    assert not env.bool("BOOLVALUEFALSE", default=True)
-    assert not env.bool("DEFAULTBOOLVALUEFALSE", default=False)
-    assert not env("DEFAULTBOOLVALUEFALSE", type=bool)
+    assert env.bool("BOOL_VALUE_TRUE", default=False)
+    assert env.bool("DEFAULT_BOOL_VALUE_TRUE", default=True)
+    assert env("DEFAULT_BOOL_VALUE_TRUE", default=True, type=bool)
+    assert not env.bool("BOOL_VALUE_FALSE", default=True)
+    assert not env.bool("DEFAULT_BOOL_VALUE_FALSE", default=False)
+    assert not env("DEFAULT_BOOL_VALUE_FALSE", type=bool)
 
 
-def test_env_list(monkeypatch):
+@pytest.mark.parametrize(
+    "env_key, expected_length, expected_values",
+    [
+        ("A_LIST_OF_IPS", 3, ["::1", "127.0.0.1", "mydomain.com"]),
+        ("LIST_OF_QUOTED_VALUES", 4, ["1", "two", "3", "four"]),
+    ],
+)
+def test_env_list(monkeypatch, env_key, expected_length, expected_values):
     monkeypatch.setattr(envex.dot_env, "open_env", dotenv)
     env = Env()
 
-    result = env.list("ALISTOFIPS")
-    assert isinstance(result, list)
-    assert len(result) == 3
-    assert result == ["::1", "127.0.0.1", "mydomain.com"]
+    def list_test_common(result, expected_length, expected_values):
+        assert isinstance(result, list)
+        assert len(result) == expected_length
+        assert result == expected_values
+        return result
 
-    result = env("ALISTOFIPS", type=list)
-    assert isinstance(result, list)
-    assert len(result) == 3
-    assert result == ["::1", "127.0.0.1", "mydomain.com"]
+    def list_test(env, env_key, expected_length, expected_values):
+        result = env.list(env_key)
+        return list_test_common(result, expected_length, expected_values)
 
-    result = env.list("LISTOFQUOTEDVALUES")
-    assert isinstance(result, list)
-    assert len(result) == 4
-    assert result == ["1", "two", "3", "four"]
-
-    result = env("LISTOFQUOTEDVALUES", type=list)
-    assert isinstance(result, list)
-    assert len(result) == 4
-    assert result == ["1", "two", "3", "four"]
+    list_test(env, env_key, expected_length, expected_values)

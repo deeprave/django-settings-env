@@ -1,7 +1,7 @@
 [run]
-omit =
-    */tests/conftest.py
-    */tests/test_*.py
+# omit =
+#     */tests/conftest.py
+#     */tests/test_*.py
 
 # [report]
 # fail_under = 90

@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "django-settings-env"
-version = "4.7.5"
-description = "12-factor.net settings support for Django with .env and HashiCorp Vault support"
+version = "5.0.0"
+description = "12-factor.net settings handler for Django"
 authors = ["David Nugent <davidn@uniquode.io>"]
 readme = "README.md"
 
