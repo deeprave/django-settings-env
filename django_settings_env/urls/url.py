@@ -169,7 +169,11 @@ def parse_url(
     config = scheme_handler(config, config.scheme) if scheme_handler else config
     config = options_handler(config, parsed_url.query) if options_handler else config
 
-    return config
+    try:
+        return config
+    except Exception as e:
+        # Handle or log the exception as needed
+        raise ValueError("An error occurred while returning the config") from e
 
 
 def parse_url_as_url(
