@@ -17,6 +17,7 @@ def cache_setting(self, name, value):
 
 def deferred_getattr(func):
 
+    # The @wraps decorator is used to preserve the original function's metadata
     @wraps(func)
     def wrapper(self, name):
         return cache_setting(self, name, func(self, name))
