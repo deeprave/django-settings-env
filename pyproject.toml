@@ -3,7 +3,18 @@ name = "django-settings-env"
 version = "5.0.0"
 description = "12-factor.net settings handler for Django"
 authors = ["David Nugent <davidn@uniquode.io>"]
+license = "MIT"
 readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Framework :: Django :: Module",
+    "Framework :: Django :: 4.0",
+    "Framework :: Django :: 4.1",
+    "Framework :: Django :: 4.2",
+    "Framework :: Django :: 5.0",
+]
 
 [tool.poetry.dependencies]
 python = "^3.10"
