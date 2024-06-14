@@ -1,8 +1,8 @@
 from typing import Dict, AnyStr, Optional, Callable, Any, TypeAlias
+from urllib.parse import ParseResult, urlparse
 
 UrlDict: TypeAlias = Dict[AnyStr, Any]
 UrlCallable: TypeAlias = Callable[..., Any]
-from urllib.parse import ParseResult, urlparse
 
 __all__ = (
     "ConfigDict",
