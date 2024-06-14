@@ -86,7 +86,7 @@ env = Env()
 DEBUG = env(default=False)
 ```
 
-The value of `DEBUG` is deferred, and not evaluated until used or referenced.
+The value of `DEBUG` is deferred until used or referenced.
 The `default` keyword is required to set the default, because the first positional argument is reserved for the variable
 name.
 
