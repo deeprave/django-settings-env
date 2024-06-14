@@ -1,3 +1,7 @@
+"""
+This module provides URL parsing and query string handling for the search functionality.
+"""
+
 from typing import Dict, Optional, AnyStr
 from urllib.parse import parse_qs
 
