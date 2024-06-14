@@ -19,7 +19,7 @@ HashiCorp vault (since `envex` v2.0).
 configuration of any application using 12factor.net principals removing many environment-specific
 variables and/or security-sensitive information from application code and source code repositories.
 
-Settings may be sourced form .env files, directly from the environment, or from a HashiCorp vault.
+Settings may be sourced from .env files, directly from the environment, or from a HashiCorp vault.
 By default, values set in the environment take priority over those set in .env files, and
 those take priority of any corresponding values stored in Vault.
 This can be changed by setting `ENVEX_SOURCE` to a value such as `file`, `vault`, or any other value except `env`.
@@ -154,8 +154,8 @@ If used, both variables must be set and provide valid paths to the client certif
 The vault store contains a single object containing all values in a dictionary format, and is cached by default.
 The cache is used to return individual values by key (same key as the environment variable) with the assumption that the
 vault secrets remain unchanged during the application runtime.
-Consequently, any changes to vault require an application restart, so it is wide to consider why to put in vault and
-what to put in the environment.
+Consequently, any changes to vault require an application restart, so it is wise to consider which items to put in vault
+and which to put in the environment.
 It is recommended to only place items in the vault that contain secrets or are otherwise sensitive.
 
 ## django-settings-env API
