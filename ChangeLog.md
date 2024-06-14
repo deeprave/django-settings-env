@@ -5,7 +5,7 @@
 - Large refactoring of the codebase to improve performance and maintainability
 - Removed support for queue configuration via single URL.
   The queue types that were previously supported no longer exist, and the configuration of queues varies too widely to easily support as a single url.
-- refactored invidual url parsers to use a common pattern with
+- refactored individual url parsers to use a common pattern with
   hooks for handling the various types of urls in separate modules, loaded only when a url of that type is used.
 - Django < 4.0 is no longer supported (specifically for redis cache)
 - Add support for the newer elasticsearch_dsl (or elasticsearch+dsl) search backend
