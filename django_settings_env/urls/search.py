@@ -73,7 +73,7 @@ def search_options_handler(config: Dict, qs: str) -> Dict:  # noqa: C901
                 config["STORAGE"] = params["STORAGE"]
             if "POST_LIMIT" in params:
                 config["POST_LIMIT"] = int(params["POST_LIMIT"])
-            config["NAME"] = f"/{config["NAME"]}"
+            config["NAME"] = f"/{config['NAME']}"
         case "xapian":
             if "FLAGS" in params:
                 config["FLAGS"] = params["FLAGS"]

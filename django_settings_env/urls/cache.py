@@ -64,11 +64,10 @@ def cache_scheme_handler(config: Dict, scheme: str, backend: Optional[AnyStr] = 
 
 def cache_options_handler(config: Dict, qs: str) -> Dict:
     opts = dict(parse_qs(qs).items()) if qs else {}
+    opts = {k: v[0] for k, v in opts.items()}
     if "db" in opts:
-        config["LOCATION"] += f"?db={opts.pop("db")[0]}"
-    config["OPTIONS"] = config.get("OPTIONS", {}) | {
-        key: values[0] for key, values in opts.items()
-    }
+        config["LOCATION"] += f"?db={opts.pop('db')}"
+    config["OPTIONS"] = config.get("OPTIONS", {}) | opts
     if not config["OPTIONS"]:
         del config["OPTIONS"]
     return config
