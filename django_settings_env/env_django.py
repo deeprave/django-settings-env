@@ -30,7 +30,7 @@ class DjangoEnv(Env):
         @param prefix: (optional) str prefix to add to all variables (default=DJANGO_)
         @param exception: (optional) Exception class to raise on error (default=KeyError)
         @param environ: dict | None default base environment (os.environ is default)
-        @param readenv: bool read values from .env files (default=**True**)
+        @param readenv: bool If True, values will be read from .env files (default=**True**)
         - if True: the following additional args may be used
         @param env_file: str name of the environment file (.env or $ENV default)
         @param search_path: Union[List[str], List[Path]], str] path(s) to search for env_file
