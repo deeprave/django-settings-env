@@ -22,7 +22,7 @@ variables and/or security-sensitive information from application code and source
 Settings may be sourced form .env files, directly from the environment, or from a HashiCorp vault.
 By default, values set in the environment take priority over those set in .env files, and
 those take priority of any corresponding values stored in Vault.
-This can be changed by setting `ENVEX_SOURCE` or any value other than `env`.
+This can be changed by setting `ENVEX_SOURCE` to a value such as `file`, `vault`, or any other value except `env`.
 
 Some features not supported by other dotenv handlers (python-dotenv, etc.) are available
 including expansion of template variables, which can enhance Don't Repeat Yourself.
