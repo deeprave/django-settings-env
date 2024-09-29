@@ -106,7 +106,7 @@ class DjangoEnv(Env):
         # This is tied to django-class-settings (optional dependency), which allows
         # omitting the 'name' parameter and using the setting name instead
         if var is None:
-            _kwargs = {
+            _kwargs = kwargs | {
                 "name": var,
                 "prefix": prefix if prefix is _USE_DEFAULT_PREFIX else self.prefix,
                 "default": default,
@@ -121,6 +121,7 @@ class DjangoEnv(Env):
                 )
             # otherwise, use our own implementation (handles module level vars)
             from .deferred import DeferredSetting
+
             scope = inspect.currentframe().f_back
 
             # class settings not installed
