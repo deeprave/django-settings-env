@@ -8,11 +8,13 @@ DJANGO_VERSION = get_complete_version()
 
 REDIS_CACHE = "django_redis.cache.RedisCache"
 DJANGO_REDIS_CACHE = "django.core.cache.backends.redis.RedisCache"
+DJANGO_LOCMEM_CACHE = "django.core.cache.backends.locmem.LocMemCache"
 CACHE_SCHEMES = {
     "dbcache": "django.core.cache.backends.db.DatabaseCache",
     "dummycache": "django.core.cache.backends.dummy.DummyCache",
     "filecache": "django.core.cache.backends.filebased.FileBasedCache",
-    "locmemcache": "django.core.cache.backends.locmem.LocMemCache",
+    "locmem": DJANGO_LOCMEM_CACHE,
+    "locmemcache": DJANGO_LOCMEM_CACHE,
     "memcache": "django.core.cache.backends.memcached.MemcachedCache",
     "pymemcache": "django.core.cache.backends.memcached.PyLibMCCache",
     "rediscache": REDIS_CACHE if DJANGO_VERSION[0] < 4 else DJANGO_REDIS_CACHE,

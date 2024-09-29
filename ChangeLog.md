@@ -1,5 +1,11 @@
 # ChangeLog
 
+### Release 5.1.0
+
+- Added "locmem" as an alias for "localmemcache" backend.
+- Update dependencies
+- Combined dev and test poetry groups and adjusted workflows
+
 ### Release 5.0.0
 
 - Large refactoring of the codebase to improve performance and maintainability
