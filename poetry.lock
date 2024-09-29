@@ -284,13 +284,13 @@ python-dotenv = ">=0.7"
 
 [[package]]
 name = "envex"
-version = "3.1.2"
+version = "3.2.0"
 description = "Environment interface with .env and hashicorp vault support"
 optional = false
 python-versions = "<4.0.0,>=3.10.0"
 files = [
-    {file = "envex-3.1.2-py3-none-any.whl", hash = "sha256:7893c18cbdcd9a9de8171c981f7e2d7330f3b411701de6dd6764b44f1f5d9083"},
-    {file = "envex-3.1.2.tar.gz", hash = "sha256:125a440209623c7eddc72c0fba5f38286504df3bfc73a595d0559645bd239bae"},
+    {file = "envex-3.2.0-py3-none-any.whl", hash = "sha256:d07dd51a420b98a57273535ca59f125a3244166beffdded5c61be614b968704d"},
+    {file = "envex-3.2.0.tar.gz", hash = "sha256:20cfcafeba98905168755dbc40cca10706677c535a8f3abcd51b052b70838da8"},
 ]
 
 [[package]]
