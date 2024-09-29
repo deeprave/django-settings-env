@@ -16,7 +16,6 @@ def cache_setting(self, name, value):
 
 
 def deferred_getattr(func):
-
     # The @wraps decorator is used to preserve the original function's metadata
     @wraps(func)
     def wrapper(self, name):
@@ -26,7 +25,6 @@ def deferred_getattr(func):
 
 
 def deferred_getattribute(func):
-
     @wraps(func)
     def wrapper(self, name):
         return cache_setting(self, name, func(self, name))
@@ -53,12 +51,12 @@ class DeferredSetting:
     # and handles settings at module level not in a Settings class
 
     def __init__(self, env, *, scope, kwargs):
-        self._name = kwargs.pop("name", None)
+        self._name = kwargs.pop("name", None) or None
         self._env, self._scope, self._kwargs = env, scope, kwargs
         deferred_handler()
 
     def __get_variable_name(self, name):
-        name = self._name if self._name is not None else name
+        name = self._name or name
         if name is None:
             names = [n for n, v in self._scope.f_locals.items() if v is self]
             name = names[0] if names else None
@@ -66,7 +64,7 @@ class DeferredSetting:
 
     def setting(self, name):
         name = self.__get_variable_name(name)
-        return self._env.get(name, **self._kwargs) if name is not None else ""
+        return self._env.get(name, **self._kwargs) if name else ""
 
     def __repr__(self):
-        return self.setting(None)
+        return self.setting(self._name) or ""

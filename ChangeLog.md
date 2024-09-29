@@ -5,6 +5,7 @@
 - Added "locmem" as an alias for "localmemcache" backend.
 - Update dependencies
 - Combined dev and test poetry groups and adjusted workflows
+- Fixed a bug where repr() of a DeferredSettings instance would return a non-string (None) value
 
 ### Release 5.0.0
 
