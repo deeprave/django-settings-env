@@ -27,7 +27,7 @@ django-class-settings = { version = "^0.2", optional = true }
 pytest = "^8.2.0"
 pytest-cov = "^5.0"
 ruff = "^0.6.8"
-pre-commit = "^3.3.3"
+pre-commit = ">=3.3.3,<5.0.0"
 
 [tool.poetry.extras]
 django-class-settings = ["django-class-settings"]
