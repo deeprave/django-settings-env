@@ -1,10 +1,13 @@
-[tool.poetry]
+[project]
 name = "django-settings-env"
-version = "5.1.0"
+version = "5.2.0"
 description = "12-factor.net settings handler for Django"
-authors = ["David Nugent <davidn@uniquode.io>"]
-license = "MIT"
+authors = [
+    {name = "David Nugent", email = "davidn@uniquode.io"}
+]
+license = {file = "LICENSE"}
 readme = "README.md"
+requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -16,32 +19,28 @@ classifiers = [
     "Framework :: Django :: 5.0",
     "Framework :: Django :: 5.1",
 ]
+dependencies = [
+    "django>=4.0",
+    "envex>=3.0",
+]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-Django = ">=3.1"
-envex = ">=3.0"
-django-class-settings = { version = "^0.2", optional = true }
+[dependency-groups]
+dev = [
+    "pytest-cov>=5.0",
+    "pytest>=8.2",
+    "ruff>=0.6.8",
+]
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.2.0"
-pytest-cov = "^5.0"
-ruff = "^0.6.8"
-pre-commit = "^3.3.3"
-
-[tool.poetry.extras]
-django-class-settings = ["django-class-settings"]
-hvac = ["hvac"]
-
-[tool.poetry.group.vault.dependencies]
-hvac = ">= 1.1.1"
+[project.optional-dependencies]
+extras = [
+    "django-class-settings>=0.2",
+]
+vault = [
+    "hvac>=1.1.1",
+]
 
 [tool.pytest.ini-options]
 minversion = "7.0"
 addopts = "-ra -q"
 pythonpath = [ "django_settings_env" ]
 testpaths = [ "tests" ]
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
