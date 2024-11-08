@@ -1,0 +1,29 @@
+name: Test and Build CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.13", "3.12", "3.11", "3.10"]
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+
+      - name: Test and Build
+        uses: ./.github/actions/test-and-build
+        with:
+          python-version: ${{ matrix.python-version }}
+          sync-args: --extra vault

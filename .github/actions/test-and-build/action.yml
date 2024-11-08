@@ -1,0 +1,35 @@
+name: 'Test and Build'
+description: 'Composite action to setup Python, install dependencies, run tests, and build the package using uv.'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Setup uv
+      uses: astral-sh/setup-uv@v2
+      with:
+        version: 'latest'
+
+    - name: Install build dependencies
+      shell: bash
+      run: uv sync ${{ inputs.sync-args }}
+
+    - name: Run the tests
+      shell: bash
+      run: uv run pytest
+
+    - name: Build package
+      shell: bash
+      run: uv build
+
+inputs:
+  python-version:
+    description: 'Python version to use'
+    required: true
+  sync-args:
+    description: 'Extra arguments to pass to uv install'
+    required: false

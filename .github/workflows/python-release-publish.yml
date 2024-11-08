@@ -1,0 +1,33 @@
+name: Build and Publish Python Package
+
+on:
+  release:
+    types: [created]
+
+env:
+  TARGET_PYTHON_VERSION: '3.10'
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.13", "3.12", "3.11", "3.10"]
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Test and Build
+        uses: ./.github/actions/test-and-build
+        with:
+          python-version: ${{ matrix.python-version }}
+          sync-args: --extra vault
+
+      - name: build and publish package
+        if: matrix.python-version == env.TARGET_PYTHON_VERSION
+        shell: bash
+        run: uv publish --token ${{ secrets.PYPI_TOKEN }}
