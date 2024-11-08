@@ -42,5 +42,4 @@ vault = [
 [tool.pytest.ini-options]
 minversion = "7.0"
 addopts = "-ra -q"
-pythonpath = [ "django_settings_env" ]
-testpaths = [ "tests" ]
+pythonpath = [ "." ]
