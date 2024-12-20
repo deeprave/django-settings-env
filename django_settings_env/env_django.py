@@ -5,15 +5,10 @@ Wrapper around os.environ with django config value parsers
 
 import contextlib
 import inspect
+import importlib
 
 from django.core.exceptions import ImproperlyConfigured
 from envex import Env
-
-DEFAULT_DATABASE_ENV = "DATABASE_URL"
-DEFAULT_CACHE_ENV = "CACHE_URL"
-DEFAULT_EMAIL_ENV = "EMAIL_URL"
-DEFAULT_SEARCH_ENV = "SEARCH_URL"
-DEFAULT_QUEUE_ENV = "QUEUE_URL"
 
 _DEFAULT_PREFIX = "DJANGO_"
 _USE_DEFAULT_PREFIX = object()
@@ -59,6 +54,7 @@ class DjangoEnv(Env):
         kwargs.setdefault("readenv", True)
         kwargs.setdefault("parents", True)
         super().__init__(*args, **kwargs)
+        self._init_plugins()
 
     def _with_prefix(self, var, prefix):
         if prefix is _USE_DEFAULT_PREFIX:
@@ -143,92 +139,64 @@ class DjangoEnv(Env):
             )
         return self.get(var, default=default, prefix=prefix)
 
-    # Django-specific additions
-
-    def database_url(
-        self,
-        var=DEFAULT_DATABASE_ENV,
-        *,
-        default=None,
-        backend=None,
-        prefix=_USE_DEFAULT_PREFIX,
-    ):
+    @staticmethod
+    def _init_plugins():
         """
-        Parse a database URL from the environment
-
-        :param var: Variable to use
-        :param default: str default value if var is unset
-        :param backend: str|None override parsed email backend
-        :param prefix: override the prefix to add to variable
-        :return: dictionary of database options
+        Initialize all plugins in the plugin package
+        :return:
         """
-        from .urls import database
+        from . import plugin
 
-        raw_url = self.check_var(var, prefix=prefix, default=default)
-        return database.parse_db_url(raw_url, backend=backend)
+        # noinspection PyProtectedMember
+        if not plugin._initialized:
+            import os
 
-    def cache_url(
-        self,
-        var=DEFAULT_CACHE_ENV,
-        *,
-        default=None,
-        backend=None,
-        prefix=_USE_DEFAULT_PREFIX,
-    ):
+            package_path = plugin.__path__[0]  # Use the first path in the list
+            package_prefix = plugin.__name__
+            for filename in os.listdir(package_path):
+                if filename.endswith(".py") and not filename.startswith("_"):
+                    module_name = filename[:-3]  # Remove the .py extension
+                    module_name = f"{package_prefix}.{module_name}"
+                    spec = importlib.util.find_spec(module_name)
+                    if spec is not None:
+                        importlib.import_module(module_name)
+
+    def __getattr__(self, name):
         """
-        Parse a queue URL from the environment
-
-        :param var: Variable to use
-        :param default: str default value if var is unset
-        :param backend: str|None override parsed email backend
-        :param prefix: override the prefix to add to variable
-        :return: dictionary of cache parameters
+        Handle calls to unknown methods by checking against registered plugins.
         """
-        from .urls import cache
+        from . import plugin
 
-        raw_url = self.check_var(var, prefix=prefix, default=default)
-        return cache.parse_cache_url(raw_url, backend=backend)
+        rplugin = plugin.get_plugin_from_name(name)
+        if rplugin is not None:
+            # virtual handler for plugins
+            def handler(
+                var=None,
+                *,
+                default=None,
+                backend=None,
+                engine=None,
+                prefix=_USE_DEFAULT_PREFIX,
+                **kwargs,
+            ):
+                if backend and engine:
+                    raise ValueError("You cannot specify both 'backend' and 'engine'")
+                if var is None:
+                    # Use the default value specified by the plugin if necessary
+                    var = getattr(rplugin, "VAR", None)
+                # Determine the URL using the check_var method
+                url = self.check_var(var, prefix=prefix, default=default)
+                # Call the registered plugin handler with the resolved arguments
+                kwargs["backend"] = backend
+                kwargs["engine"] = engine
+                kwargs = {k: v for k, v in kwargs.items() if v is not None}
+                return rplugin.get_backend(url, **kwargs)
 
-    def email_url(
-        self,
-        var=DEFAULT_EMAIL_ENV,
-        *,
-        default=None,
-        backend=None,
-        prefix=_USE_DEFAULT_PREFIX,
-    ):
-        """
-        Parse an email URL from the environment
+            # Cache the handler for future calls
+            self.__dict__[name] = handler
+            return handler
 
-        :param var: Environment variable to use
-        :param default: str default value if var is unset
-        :param backend: str|None override parsed email backend
-        :param prefix: override the prefix to add to variable
-        :return: dictionary of email variables
-        """
-        from .urls import email
-
-        raw_url = self.check_var(var, prefix=prefix, default=default)
-        return email.parse_email_url(raw_url, backend=backend)
-
-    def search_url(
-        self,
-        var=DEFAULT_SEARCH_ENV,
-        *,
-        default=None,
-        backend=None,
-        prefix=_USE_DEFAULT_PREFIX,
-    ):
-        """
-        Parse a search URL from environment
-
-        :param var: Environment variable to use
-        :param default: str default value if var is unset
-        :param backend: str|None override parsed email backend
-        :param prefix: override the prefix to add to variable
-        :return: dictionary of storage variables
-        """
-        from .urls import search
-
-        raw_url = self.check_var(var, prefix=prefix, default=default)
-        return search.parse_search_url(raw_url, backend=backend)
+        # If no plugin matches, fallback to normal attribute handling
+        raise AttributeError(
+            f"'{self.__class__.__name__}' object has no attribute '{name}'"
+        )

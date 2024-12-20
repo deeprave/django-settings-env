@@ -1,5 +1,15 @@
 # ChangeLog
 
+### Release 5.3.0
+
+- Unified all url parsing functions into a single module and return a ParsedUrl instead of a dictionary
+- Use a standard ParsedUrl -> config conversion (instead of transform) for all plugins
+- Refactored urls modules to use a plugin style architecture
+  - Plugins define their own default environment variable "DATABASE_URL", "CACHE_URL", etc.
+  - Plugins can override url parsing functions, if required
+  - Plugins define the name of the function on the DjangoEnv object for url parsing in context
+- A future version will provide a way to discover plugins in the current virtualenv, allowing for third-party plugins to be used
+
 ### Release 5.1.0
 
 - Added "locmem" as an alias for "localmemcache" backend.
@@ -38,9 +48,11 @@
 - add build & publish github action
 
 ### Release 4.5.0
-  - documentation cleanup
-  - code quality improvements
+
+- documentation cleanup
+- code quality improvements
 
 ### Release 4.3.0
-  - fixed an issue evaluating DeferredSettings instance where __getattr__ would get skipped
-  - deferred values are now cached
+
+- fixed an issue evaluating DeferredSettings instance where __getattr__ would get skipped
+- deferred values are now cached

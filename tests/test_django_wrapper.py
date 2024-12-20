@@ -30,6 +30,7 @@ TEST_ENV = [
 @contextlib.contextmanager
 def dotenv(ignored):
     _ = ignored
+    #   yield io.BytesIO("\n".join(TEST_ENV).encode("utf-8"))
     yield io.StringIO("\n".join(TEST_ENV))
 
 
@@ -86,7 +87,7 @@ def test_env_email(monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "search_url, expected_engine, expected_url, expected_hosts, expected_index_name",
+    "search_url, expected_backend, expected_url, expected_hosts, expected_index_name",
     [
         (
             "elasticsearch2://127.0.0.1:9200/index?SCHEME=http",
@@ -121,7 +122,7 @@ def test_env_email(monkeypatch):
 def test_search_url(
     monkeypatch,
     search_url,
-    expected_engine,
+    expected_backend,
     expected_url,
     expected_hosts,
     expected_index_name,
@@ -133,8 +134,8 @@ def test_search_url(
     result = env.search_url()
 
     # sourcery skip: no-conditionals-in-tests
-    if expected_engine:
-        assert result["ENGINE"] == expected_engine
+    if expected_backend:
+        assert result["BACKEND"] == expected_backend
     if expected_url:
         assert result["URL"] == expected_url
     if expected_hosts:

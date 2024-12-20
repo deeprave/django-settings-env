@@ -1,13 +1,13 @@
 [project]
 name = "django-settings-env"
-version = "5.2.0"
+version = "5.3.0"
 description = "12-factor.net settings handler for Django"
 authors = [
     {name = "David Nugent", email = "davidn@uniquode.io"}
 ]
 license = {file = "LICENSE"}
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -20,15 +20,20 @@ classifiers = [
     "Framework :: Django :: 5.1",
 ]
 dependencies = [
-    "django>=4.0",
-    "envex>=3.0",
+    "django>=5.0",
+    "envex>=4.0",
 ]
+
+[project.urls]
+homepage = "https://github.com/deeprave/django-settings-env"
+repository = "https://github.com/deeprave/django-settings-env"
 
 [dependency-groups]
 dev = [
     "pytest-cov>=5.0",
     "pytest>=8.2",
     "ruff>=0.6.8",
+    "psycopg>=3.2.3",
 ]
 
 [project.optional-dependencies]
