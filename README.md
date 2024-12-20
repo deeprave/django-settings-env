@@ -100,7 +100,7 @@ Explicitly specifying the variable name, however, will still work in this case.
 
 ## Django Settings
 
-`django-settings-env` adds features to `envex` and specifically aims to bring= full 12-factor.net compliance to
+`django-settings-env` adds features to `envex` and specifically aims to bring full 12-factor.net compliance to
 Django settings.
 It will typically avoid the need to separate local/development configuration settings from production settings, as values are determined at runtime by the content of the environment, `.env` and `.env.enc` files, or values obtained from a HashiCorp vault.
 
