@@ -1,15 +1,14 @@
 [project]
 name = "django-settings-env"
-version = "5.3.2"
+version = "5.3.3"
 description = "12-factor.net settings handler for Django"
 authors = [
     {name = "David Nugent", email = "davidn@uniquode.io"}
 ]
-license = {text = "MIT"}
+license = {file = "LICENSE.md"}
 readme = "README.md"
 requires-python = ">=3.11"
 classifiers = [
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -48,3 +47,7 @@ vault = [
 minversion = "7.0"
 addopts = "-ra -q"
 pythonpath = [ "." ]
+
+[build-system]
+requires = ["flit-core"]
+build-backend = "flit_core.buildapi"

@@ -1,5 +1,9 @@
 # ChangeLog
 
+### Release 5.3.3
+
+- Workaround bug in publishing using the default setuptools and just use flit.
+
 ### Release 5.3.0
 
 - Unified all url parsing functions into a single module and return a ParsedUrl instead of a dictionary
