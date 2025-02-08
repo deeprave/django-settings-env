@@ -1,11 +1,11 @@
 [project]
 name = "django-settings-env"
-version = "5.3.3"
+version = "5.3.4"
 description = "12-factor.net settings handler for Django"
 authors = [
     {name = "David Nugent", email = "davidn@uniquode.io"}
 ]
-license = {file = "LICENSE.md"}
+license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.11"
 classifiers = [
