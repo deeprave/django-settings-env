@@ -60,6 +60,7 @@ class DatabasePlugin(EnvPlugin):
     CONTEXTS = ["database"]
 
     def get_backend(self, url: str, **kwargs) -> object:
+        # sourcery skip: extract-method
         parsed = self.parse_url(url, context=self.CONTEXTS)
         backend = kwargs.get("backend", None)
         options = kwargs.get("options", {})
@@ -78,6 +79,7 @@ class DatabasePlugin(EnvPlugin):
                 raise ValueError(f"Unsupported database scheme: {parsed.scheme}") from e
             config["NAME"] = parsed.path[1:] if parsed.path else parsed.path
             config["HOST"] = parsed.hostname
+            config["PORT"] = parsed.port or None
             config["USER"] = parsed.username
             config["PASSWORD"] = parsed.password
         if parsed.qs:

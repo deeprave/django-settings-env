@@ -63,6 +63,7 @@ def test_database_plugin_get_backend_without_userpass(database_plugin):
         "ENGINE": "django.db.backends.postgresql",
         "HOST": "localhost",
         "NAME": "mydb",
+        "PORT": 5432,
     }
 
 
@@ -74,5 +75,6 @@ def test_database_plugin_get_backend_withuserpass(database_plugin):
         "HOST": "localhost",
         "NAME": "mydb",
         "USER": "user",
+        "PORT": 5432,
         "PASSWORD": "password",
     }
