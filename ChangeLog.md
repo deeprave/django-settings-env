@@ -1,5 +1,10 @@
 # ChangeLog
 
+### Release 5.3.5
+
+- Use yarl for more robust url handling
+- Update dependencies
+
 ### Release 5.3.3
 
 - Workaround bug in publishing using the default setuptools and just use flit.
