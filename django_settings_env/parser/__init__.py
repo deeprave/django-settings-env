@@ -1,6 +1,6 @@
 from typing import Optional
 from dataclasses import dataclass
-from urllib.parse import urlparse, parse_qsl
+from yarl import URL
 
 
 __all__ = (
@@ -89,16 +89,16 @@ class URLParser:
         """
         if "://" not in url and "/" in url:
             url = f"https://{url}"
-        parsed = urlparse(url)
-        if parsed.scheme or parsed.hostname or parsed.path:
+        parsed = URL(url)
+        if parsed.scheme or parsed.host or parsed.path:
             return ParsedUrl(
                 scheme=parsed.scheme,
-                username=parsed.username,
+                username=parsed.user,
                 password=parsed.password,
-                hostname=parsed.hostname,
+                hostname=parsed.host,
                 port=parsed.port,
                 path=parsed.path,
-                qs=dict(parse_qsl(parsed.query)) if parsed.query else None,
+                qs=parsed.query or None,
             )
         else:
             raise ValueError(f"Invalid URL: {url}")
