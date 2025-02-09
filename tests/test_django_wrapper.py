@@ -51,7 +51,7 @@ def test_env_memcached(monkeypatch):
     env = Env()
 
     django_cache = env.cache_url()
-    assert django_cache["LOCATION"] == "localhost:11211"
+    assert django_cache["LOCATION"] == "localhost:11211/"
     assert (
         django_cache["BACKEND"] == "django.core.cache.backends.memcached.MemcachedCache"
     )
@@ -107,14 +107,14 @@ def test_env_email(monkeypatch):
             "elasticsearch+dsl://127.0.0.1:9200?SCHEME=http",
             None,
             None,
-            "http://127.0.0.1:9200",
+            "http://127.0.0.1:9200/",
             None,
         ),
         (
             "elasticsearch-dsl://127.0.0.1:9200",
             None,
             None,
-            "https://127.0.0.1:9200",
+            "https://127.0.0.1:9200/",
             None,
         ),
     ],

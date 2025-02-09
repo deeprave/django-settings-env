@@ -21,6 +21,7 @@ classifiers = [
 dependencies = [
     "django>=5.0",
     "envex>=4.0",
+    "yarl>=1.18.3",
 ]
 
 [project.urls]

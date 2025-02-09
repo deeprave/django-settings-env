@@ -33,7 +33,7 @@ def test_cache_plugin_get_backend_valid_memcache(cache_plugin):
     url = "memcache://localhost:11211"
     result = cache_plugin.get_backend(url)
     assert result["BACKEND"] == "django.core.cache.backends.memcached.MemcachedCache"
-    assert result["LOCATION"] == "localhost:11211"
+    assert result["LOCATION"] == "localhost:11211/"
 
 
 def test_cache_plugin_get_backend_unknown_scheme(cache_plugin):

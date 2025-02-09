@@ -53,9 +53,10 @@ class SearchPlugin(EnvPlugin):
             config["BATCH_SIZE"] = options.pop("BATCH_SIZE")
 
         if parsed.path:
-            config["NAME"] = parsed.path[1:]
-            if config["NAME"].endswith("/"):
-                config["NAME"] = config["NAME"][:-1]
+            path = parsed.path[1:]
+            if path and path.endswith("/"):
+                path = path[:-1]
+            config["NAME"] = path
 
         config["KWARGS"] = options.get("KWARGS", None)
         config["TIMEOUT"] = options.get("TIMEOUT", None)
