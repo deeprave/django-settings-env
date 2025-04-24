@@ -1,5 +1,10 @@
 # ChangeLog
 
+### Release 5.4.0
+
+ - Maintenance release (envex 4.2+ for nested and bar environment variable support)
+ - Updated dependencies
+
 ### Release 5.3.5
 
 - Use yarl for more robust url handling

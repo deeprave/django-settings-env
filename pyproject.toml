@@ -1,6 +1,6 @@
 [project]
 name = "django-settings-env"
-version = "5.3.5"
+version = "5.4.0"
 description = "12-factor.net settings handler for Django"
 authors = [
     {name = "David Nugent", email = "davidn@uniquode.io"}
@@ -20,7 +20,7 @@ classifiers = [
 ]
 dependencies = [
     "django>=5.0",
-    "envex>=4.0",
+    "envex>=4.2",
     "yarl>=1.18.3",
 ]
 
