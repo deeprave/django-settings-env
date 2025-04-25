@@ -63,7 +63,7 @@ def test_cache_plugin_get_backend_special_case_socket(cache_plugin):
     url = "redis+socket:///var/run/redis/redis.sock"
     result = cache_plugin.get_backend(url)
     assert result["BACKEND"] == "django.core.cache.backends.redis.RedisCache"
-    assert result["LOCATION"] == "socket:///var/run/redis/redis.sock"
+    assert result["LOCATION"] == "unix:///var/run/redis/redis.sock"
 
 
 def test_cache_plugin_get_backend_invalid_scheme(cache_plugin):

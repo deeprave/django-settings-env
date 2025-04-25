@@ -52,17 +52,13 @@ class CachePlugin(EnvPlugin):
         match parsed.scheme:
             case "filecache":
                 config["LOCATION"] = f"{host}{name}"
-            case "redis" | "rediscache" | "pymemcache":
+            case "redis" | "rediscache" | "pymemcache" | "redis+socket":
                 # note: SSL is not supported for unix domain sockets, so "rediss" is not here
                 if parsed.hostname == "unix" or not parsed.hostname:
                     path = name or "/tmp/redis.sock"
                     config["LOCATION"] = f"unix://{path}"
                 else:
                     config["LOCATION"] = parsed.to_url()
-            case "redis+socket":
-                # special case for redis+socket
-                path = name or "/tmp/redis.sock"
-                config["LOCATION"] = f"socket://{path}"
             case "dummycache":
                 config["LOCATION"] = config["NAME"] = None
             case "dbcache":
