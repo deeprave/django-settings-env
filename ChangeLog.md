@@ -1,4 +1,7 @@
 # ChangeLog
+### Release 5.4.1
+
+ - Added support for redis+socket urls
 
 ### Release 5.4.0
 

@@ -4,8 +4,11 @@ from . import EnvPlugin, ConfigDict, register_plugin, convert_values
 
 DJANGO_VERSION = get_complete_version()
 
-REDIS_CACHE_BACKEND = "django_redis.cache.RedisCache"
-DJANGO_REDIS_CACHE_BACKEND = "django.core.cache.backends.redis.RedisCache"
+REDIS_CACHE_BACKEND = (
+    "django_redis.cache.RedisCache"
+    if DJANGO_VERSION[0] < 4
+    else "django.core.cache.backends.redis.RedisCache"
+)
 DJANGO_LOCMEM_CACHE_BACKEND = "django.core.cache.backends.locmem.LocMemCache"
 CACHE_SCHEMES = {
     "dbcache": "django.core.cache.backends.db.DatabaseCache",
@@ -15,13 +18,10 @@ CACHE_SCHEMES = {
     "locmemcache": DJANGO_LOCMEM_CACHE_BACKEND,
     "memcache": "django.core.cache.backends.memcached.MemcachedCache",
     "pymemcache": "django.core.cache.backends.memcached.PyLibMCCache",
-    "rediscache": REDIS_CACHE_BACKEND
-    if DJANGO_VERSION[0] < 4
-    else DJANGO_REDIS_CACHE_BACKEND,
-    "redis": REDIS_CACHE_BACKEND if DJANGO_VERSION[0] < 4 else DJANGO_REDIS_CACHE_BACKEND,
-    "rediss": REDIS_CACHE_BACKEND
-    if DJANGO_VERSION[0] < 4
-    else DJANGO_REDIS_CACHE_BACKEND,
+    "rediscache": REDIS_CACHE_BACKEND,
+    "redis+socket": REDIS_CACHE_BACKEND,
+    "redis": REDIS_CACHE_BACKEND,
+    "rediss": REDIS_CACHE_BACKEND,
 }
 
 
@@ -54,11 +54,15 @@ class CachePlugin(EnvPlugin):
                 config["LOCATION"] = f"{host}{name}"
             case "redis" | "rediscache" | "pymemcache":
                 # note: SSL is not supported for unix domain sockets, so "rediss" is not here
-                if parsed.hostname == "unix":
+                if parsed.hostname == "unix" or not parsed.hostname:
                     path = name or "/tmp/redis.sock"
                     config["LOCATION"] = f"unix://{path}"
                 else:
                     config["LOCATION"] = parsed.to_url()
+            case "redis+socket":
+                # special case for redis+socket
+                path = name or "/tmp/redis.sock"
+                config["LOCATION"] = f"socket://{path}"
             case "dummycache":
                 config["LOCATION"] = config["NAME"] = None
             case "dbcache":
