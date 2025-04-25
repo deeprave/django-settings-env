@@ -1,6 +1,6 @@
 [project]
 name = "django-settings-env"
-version = "5.4.0"
+version = "5.4.1"
 description = "12-factor.net settings handler for Django"
 authors = [
     {name = "David Nugent", email = "davidn@uniquode.io"}
@@ -12,11 +12,10 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
-    "Framework :: Django :: 4.0",
-    "Framework :: Django :: 4.1",
     "Framework :: Django :: 4.2",
     "Framework :: Django :: 5.0",
     "Framework :: Django :: 5.1",
+    "Framework :: Django :: 5.2",
 ]
 dependencies = [
     "django>=5.0",
@@ -45,7 +44,7 @@ vault = [
 ]
 
 [tool.pytest.ini-options]
-minversion = "7.0"
+minversion = "8.0"
 addopts = "-ra -q"
 pythonpath = [ "." ]
 
