@@ -6,6 +6,7 @@ Wrapper around os.environ with django config value parsers
 import contextlib
 import inspect
 import importlib
+from typing import List
 
 from django.core.exceptions import ImproperlyConfigured
 from envex import Env
@@ -59,27 +60,58 @@ class DjangoEnv(Env):
     def _with_prefix(self, var, prefix):
         if prefix is _USE_DEFAULT_PREFIX:
             prefix = self.prefix
-        if var and prefix and not var.startswith(prefix) and not self.is_set(var):
+        if (
+            var
+            and prefix
+            and not (isinstance(var, str) and var.startswith(prefix))
+            and not super().is_set(var)
+        ):
             var = f"{prefix}{var}"
         return var
 
+    def unset(self, var, prefix=_USE_DEFAULT_PREFIX):
+        super().unset(self._with_prefix(var, prefix=prefix))
+
+    def is_set(self, var, prefix=_USE_DEFAULT_PREFIX):
+        return super().is_set(self._with_prefix(var, prefix=prefix))
+
+    def is_all_set(
+        self, *_vars: str | List[str | list | tuple], prefix=_USE_DEFAULT_PREFIX
+    ):
+        def check_nested(v):
+            if isinstance(v, (list, tuple)):
+                return all(check_nested(item) for item in v)
+            return self.is_set(self._with_prefix(v, prefix=prefix))
+
+        return all(check_nested(v) for v in _vars)
+
+    def is_any_set(
+        self, *_vars: str | List[str | list | tuple], prefix=_USE_DEFAULT_PREFIX
+    ):
+        def check_nested(v):
+            if isinstance(v, (list, tuple)):
+                return any(check_nested(item) for item in v)
+            return self.is_set(v, prefix=prefix)
+
+        return any(check_nested(v) for v in _vars)
+
     def get(self, var, default=None, prefix=_USE_DEFAULT_PREFIX):
-        return super().get(self._with_prefix(var, prefix=prefix), default)
+        return super().get(self._with_prefix(var, prefix=prefix), default=default)
 
     def int(self, var, default=None, prefix=_USE_DEFAULT_PREFIX) -> int:
-        val = self.get(var, default, prefix=prefix)
+        val = self.get(var, default=default, prefix=prefix)
         return self._int(val)
 
     def float(self, var, default=None, prefix=_USE_DEFAULT_PREFIX) -> float:
-        val = self.get(var, default, prefix=prefix)
+        val = self.get(var, default=default, prefix=prefix)
         return self._float(val)
 
     def bool(self, var, default=None, prefix=_USE_DEFAULT_PREFIX) -> bool:
-        val = self.get(var, default, prefix=prefix)
-        return val if isinstance(val, (bool, int)) else self.is_true(val)
+        val = self.get(var, default=default, prefix=prefix)
+        return bool(val) if isinstance(val, (bool, int)) else self.is_true(val)
 
     def list(self, var, default=None, prefix=_USE_DEFAULT_PREFIX) -> list:
-        val = self.get(var, default, prefix=prefix)
+        val = self.get(var, default=default, prefix=prefix)
         return val if isinstance(val, (list, tuple)) else self._list(val)
 
     def check_var(self, var, default=None, prefix=_USE_DEFAULT_PREFIX, raise_error=True):

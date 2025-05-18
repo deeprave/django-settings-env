@@ -1,4 +1,9 @@
 # ChangeLog
+### Release 5.5.0
+
+- Add overrides for is_set, is_true, is_all_set, is_any_set to respect
+  the configured prefix.
+
 ### Release 5.4.2
 
  - Added support for redis+socket urls
