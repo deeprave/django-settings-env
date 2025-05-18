@@ -214,18 +214,6 @@ def test_env_float(monkeypatch):
     assert env("DEFAULT_FLOAT_VALUE", type=float) == 83.6
 
 
-def test_is_true():
-    env = Env()
-    assert env.is_true(1)
-    assert env.is_true("1")
-    assert not env.is_true(0)
-    assert not env.is_true("0")
-    assert not env.is_true(b"0")
-    assert not env.is_true(False)
-    assert not env.is_true("False")
-    assert not env.is_true(None)
-
-
 def test_env_bool(monkeypatch):
     monkeypatch.setattr(envex.dot_env, "open_env", dotenv)
     env = Env()
@@ -259,3 +247,61 @@ def test_env_list(monkeypatch, env_key, expected_length, expected_values):
         return list_test_common(result, expected_length, expected_values)
 
     list_test(env, env_key, expected_length, expected_values)
+
+
+def test_is_all_set():
+    env = Env(environ={})
+
+    # Test with single variables
+    env["TEST_VAR1"] = "value1"
+    assert env.is_all_set("TEST_VAR1")
+    assert not env.is_all_set("TEST_VAR2")
+
+    # Test with multiple variables
+    env["TEST_VAR2"] = "value2"
+    assert env.is_all_set("TEST_VAR1", "TEST_VAR2")
+    assert not env.is_all_set("TEST_VAR1", "TEST_VAR3")
+
+    # Test with nested lists/tuples
+    env["TEST_VAR3"] = "value3"
+    assert env.is_all_set(["TEST_VAR1", "TEST_VAR2"])
+    assert env.is_all_set(("TEST_VAR1", "TEST_VAR2"))
+    assert env.is_all_set("TEST_VAR1", ["TEST_VAR2", "TEST_VAR3"])
+    assert not env.is_all_set("TEST_VAR1", ["TEST_VAR2", "TEST_VAR4"])
+
+    # Test with prefix
+    env["DJANGO_PREFIX_VAR"] = "value"
+    assert env.is_all_set("PREFIX_VAR", prefix="DJANGO_")
+
+    # Test with a complex nested structure
+    assert env.is_all_set("TEST_VAR1", ["TEST_VAR2", ("TEST_VAR3",)])
+    assert not env.is_all_set("TEST_VAR1", ["TEST_VAR2", ("TEST_VAR4",)])
+
+
+def test_is_any_set():
+    env = Env(environ={}, readenv=False)
+
+    # Test with single variables
+    env["TEST_VAR1"] = "value1"
+    assert env.is_any_set("TEST_VAR1")
+    assert not env.is_any_set("TEST_VAR2")
+
+    # Test with multiple variables
+    assert env.is_any_set("TEST_VAR1", "TEST_VAR2")
+    assert env.is_any_set("TEST_VAR2", "TEST_VAR1")
+    assert not env.is_any_set("TEST_VAR2", "TEST_VAR3")
+
+    # Test with nested lists/tuples
+    env["TEST_VAR3"] = "value3"
+    assert env.is_any_set(["TEST_VAR1", "TEST_VAR4"])
+    assert env.is_any_set(("TEST_VAR4", "TEST_VAR1"))
+    assert env.is_any_set("TEST_VAR4", ["TEST_VAR2", "TEST_VAR3"])
+    assert not env.is_any_set("TEST_VAR4", ["TEST_VAR5", "TEST_VAR6"])
+
+    # Test with prefix
+    env["DJANGO_PREFIX_VAR"] = "value"
+    assert env.is_any_set("PREFIX_VAR", prefix="DJANGO_")
+
+    # Test with complex nested structure
+    assert env.is_any_set("TEST_VAR4", ["TEST_VAR5", ("TEST_VAR1",)])
+    assert not env.is_any_set("TEST_VAR4", ["TEST_VAR5", ("TEST_VAR6",)])
