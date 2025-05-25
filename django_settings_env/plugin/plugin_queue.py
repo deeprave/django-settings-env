@@ -30,7 +30,10 @@ class QueuePlugin(EnvPlugin):
         try:
             config["BACKEND"] = backend or QUEUE_SCHEMES[parsed.scheme]
         except KeyError as e:
-            raise ValueError(f"Unknown queue scheme: {parsed.scheme}") from e
+            valid_schemes = ", ".join(sorted(QUEUE_SCHEMES.keys()))
+            raise ValueError(
+                f"Unknown queue scheme: {parsed.scheme}. Supported schemes are: {valid_schemes}"
+            ) from e
 
         name = parsed.path
         match parsed.scheme:
