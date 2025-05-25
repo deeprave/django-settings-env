@@ -36,6 +36,13 @@ def test_queue_plugin_get_backend_options_handling(queue_plugin):
     assert result["TIMEOUT"] == 300
     assert result["KEY_PREFIX"] == "my_prefix"
 
+def test_queue_plugin_get_backend_backend_kwarg_override(queue_plugin):
+    url = "redis://localhost:6379/0"
+    custom_backend = "my.custom.Backend"
+    result = queue_plugin.get_backend(url, backend=custom_backend)
+    assert result["BACKEND"] == custom_backend
+    assert result["URL"] == url
+
 
 def test_queue_plugin_get_backend_special_case_unix(queue_plugin):
     url = "redis://unix/tmp/redis.sock"
