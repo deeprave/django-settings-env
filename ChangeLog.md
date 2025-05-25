@@ -1,4 +1,15 @@
 # ChangeLog
+
+### Release 5.6.0
+
+- Introduces a new QueuePlugin for handling queue configuration via queue URLs.
+  These are parsed similarly to the cache URLs, but return a "URL" not a "LOCATION"
+
+### Release 5.5.0
+
+- Add overrides for is_set, is_true, is_all_set, is_any_set to respect
+  the configured prefix.
+
 ### Release 5.5.0
 
 - Add overrides for is_set, is_true, is_all_set, is_any_set to respect
