@@ -2,8 +2,8 @@ from . import EnvPlugin, ConfigDict, register_plugin, convert_values
 
 REDIS_QUEUE_BACKEND = "django_redis.cache.RedisCache"
 QUEUE_SCHEMES = {
-    "pymemcache": "django.core.cache.backends.memcached.PyLibMCCache",
-    "rediscache": REDIS_QUEUE_BACKEND,
+    "pymemqueue": "django.core.cache.backends.memcached.PyLibMCCache",
+    "redisqueue": REDIS_QUEUE_BACKEND,
     "redis+socket": REDIS_QUEUE_BACKEND,
     "redis": REDIS_QUEUE_BACKEND,
     "rediss": REDIS_QUEUE_BACKEND,
@@ -34,7 +34,7 @@ class QueuePlugin(EnvPlugin):
 
         name = parsed.path
         match parsed.scheme:
-            case "redis" | "rediscache" | "pymemcache" | "redis+socket" | "rediss":
+            case "redis" | "redisqueue" | "pymemqueue" | "redis+socket" | "rediss":
                 # note: SSL is not supported for unix domain sockets
                 if parsed.hostname == "unix" or not parsed.hostname:
                     path = name or "/tmp/redis.sock"
