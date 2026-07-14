@@ -7,6 +7,9 @@ on:
 env:
   TARGET_PYTHON_VERSION: '3.11'
 
+permissions:
+  contents: read
+
 jobs:
   checks:
     runs-on: ubuntu-latest

@@ -10,7 +10,8 @@ runs:
         python-version: ${{ inputs.python-version }}
 
     - name: Setup uv
-      uses: astral-sh/setup-uv@v2
+      # This trusted action intentionally tracks upstream updates.
+      uses: astral-sh/setup-uv@main
       with:
         version: 'latest'
 
