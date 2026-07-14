@@ -11,7 +11,7 @@ runs:
 
     - name: Setup uv
       # This trusted action intentionally tracks upstream updates.
-      uses: astral-sh/setup-uv@main
+      uses: astral-sh/setup-uv@8.3.2
       with:
         version: 'latest'
 
