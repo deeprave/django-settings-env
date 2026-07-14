@@ -64,7 +64,7 @@ class DjangoEnv(Env):
             var
             and prefix
             and not (isinstance(var, str) and var.startswith(prefix))
-            and not super().is_set(var)
+            and super().get(var, None) is None
         ):
             var = f"{prefix}{var}"
         return var
