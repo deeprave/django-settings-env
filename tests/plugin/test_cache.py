@@ -1,5 +1,5 @@
 import pytest
-from django_settings_env.plugin.plugin_cache import CachePlugin
+from django_settings_env.plugin.plugin_cache import CACHE_SCHEMES, CachePlugin
 
 
 @pytest.fixture
@@ -70,3 +70,30 @@ def test_cache_plugin_get_backend_invalid_scheme(cache_plugin):
     url = "cache_unknown_scheme:///"
     with pytest.raises(ValueError, match="Missing cache scheme or url parse error"):
         cache_plugin.get_backend(url)
+
+
+@pytest.mark.parametrize(
+    ("scheme", "url", "location"),
+    [
+        ("dbcache", "dbcache:///cache-table", "cache-table"),
+        ("locmem", "locmem://cache", "locmem://cache/"),
+        ("locmemcache", "locmemcache://cache", "locmemcache://cache/"),
+        ("pymemcache", "pymemcache://localhost:11211", "pymemcache://localhost:11211/"),
+        ("rediscache", "rediscache://localhost:6379/0", "rediscache://localhost:6379/0"),
+        ("rediss", "rediss://localhost:6379/0", "rediss://localhost:6379/0"),
+    ],
+)
+def test_cache_plugin_supports_each_remaining_declared_scheme(
+    cache_plugin, scheme, url, location
+):
+    result = cache_plugin.get_backend(url)
+
+    assert result["BACKEND"] == CACHE_SCHEMES[scheme]
+    assert result["LOCATION"] == location
+
+
+def test_cache_plugin_falls_back_to_redis_and_preserves_unknown_qualifiers(cache_plugin):
+    result = cache_plugin.get_backend("redis+cluster://localhost:6379/0")
+
+    assert result["BACKEND"] == CACHE_SCHEMES["redis"]
+    assert result["LOCATION"] == "redis+cluster://localhost:6379/0"

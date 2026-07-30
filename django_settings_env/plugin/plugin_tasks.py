@@ -34,7 +34,7 @@ class TasksPlugin(EnvPlugin):
     VAR = "CACHE_URL"
     CONTEXTS = ["caches"]
 
-    def get_backend(self, url: str, **kwargs) -> object:
+    def get_backend(self, url: str, **kwargs) -> object:  # noqa: C901
         parsed = self.parse_url(url, context=self.CONTEXTS)
         backend = kwargs.get("backend", None)
         options = ConfigDict(kwargs.get("options", {}))
@@ -43,18 +43,19 @@ class TasksPlugin(EnvPlugin):
         if not parsed.scheme:
             raise ValueError("Missing tasks scheme or url parse error")
         try:
-            config["BACKEND"] = backend or TASKS_SCHEMES[parsed.scheme]
+            scheme = self.resolve_scheme(parsed, TASKS_SCHEMES)
+            config["BACKEND"] = backend or TASKS_SCHEMES[scheme]
         except KeyError as e:
             raise ValueError(f"Unknown tasks scheme: {parsed.scheme}") from e
 
         url_scheme = parsed.scheme
         name = parsed.path[1:] if parsed.path else None
-        match parsed.scheme:
+        match scheme:
             case "redis" | "redis-queue":
                 if parsed.hostname == "unix":
                     path = name or "tmp/redis.sock"
                     config["URL"] = f"unix:///{path}"
-                else:
+                elif scheme == "redis-queue":
                     url_scheme = "redis"
             case "postgres" | "postgresql" | "mysql" | "sqlite":
                 # which db to use
@@ -63,7 +64,8 @@ class TasksPlugin(EnvPlugin):
             case "dummy" | "immediate":
                 pass  # no additional options
 
-        config["URL"] = parsed.to_url(scheme=url_scheme)
+        if "URL" not in config:
+            config["URL"] = parsed.to_url(scheme=url_scheme)
         if parsed.qs:
             options.update(parsed.qs)
         convert_values(options)

@@ -34,16 +34,17 @@ class EmailPlugin(EnvPlugin):
         if not parsed.scheme:
             raise ValueError("Missing email scheme or url parse error")
         try:
-            config["EMAIL_BACKEND"] = backend or EMAIL_SCHEMES[parsed.scheme]
+            scheme = self.resolve_scheme(parsed, EMAIL_SCHEMES)
+            config["EMAIL_BACKEND"] = backend or EMAIL_SCHEMES[scheme]
         except KeyError as e:
             raise ValueError(f"Unknown email scheme: {parsed.scheme}") from e
 
         config.update(options)
         default_port = 25
-        if parsed.scheme in {"smtps", "smtp+tls"}:
+        if scheme in {"smtps", "smtp+tls"}:
             config["EMAIL_USE_TLS"] = True
             default_port = 587
-        elif parsed.scheme == "smtp+ssl":
+        elif scheme == "smtp+ssl":
             config["EMAIL_USE_SSL"] = True
             default_port = 465
 

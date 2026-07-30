@@ -1,5 +1,5 @@
 import pytest
-from django_settings_env.plugin.plugin_queue import QueuePlugin
+from django_settings_env.plugin.plugin_queue import QUEUE_SCHEMES, QueuePlugin
 
 
 @pytest.fixture
@@ -62,3 +62,20 @@ def test_queue_plugin_get_backend_invalid_scheme(queue_plugin):
     url = "queue_unknown_scheme:///"
     with pytest.raises(ValueError, match="Missing queue scheme or url parse error"):
         queue_plugin.get_backend(url)
+
+
+@pytest.mark.parametrize("scheme", ["pymemqueue", "redisqueue"])
+def test_queue_plugin_supports_each_remaining_declared_scheme(queue_plugin, scheme):
+    result = queue_plugin.get_backend(f"{scheme}://localhost:6379/0")
+
+    assert result["BACKEND"] == QUEUE_SCHEMES[scheme]
+    assert result["URL"] == f"{scheme}://localhost:6379/0"
+
+
+def test_queue_plugin_falls_back_to_redis_and_preserves_unknown_qualifiers(
+    queue_plugin,
+):
+    result = queue_plugin.get_backend("redis+cluster://localhost:6379/0")
+
+    assert result["BACKEND"] == QUEUE_SCHEMES["redis"]
+    assert result["URL"] == "redis+cluster://localhost:6379/0"

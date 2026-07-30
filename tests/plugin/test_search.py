@@ -1,5 +1,5 @@
 import pytest
-from django_settings_env.plugin.plugin_search import SearchPlugin
+from django_settings_env.plugin.plugin_search import SEARCH_SCHEMES, SearchPlugin
 
 
 @pytest.fixture
@@ -77,3 +77,25 @@ def test_get_backend_with_no_scheme(search_plugin):
     with pytest.raises(ValueError) as exc:
         search_plugin.get_backend(url)
     assert "Unknown search scheme" in str(exc.value)
+
+
+@pytest.mark.parametrize("scheme", ["elasticsearch2", "solr", "simple"])
+def test_search_plugin_supports_each_remaining_declared_backend(search_plugin, scheme):
+    result = search_plugin.get_backend(f"{scheme}://localhost:9200/index_name")
+
+    assert result["BACKEND"] == SEARCH_SCHEMES[scheme]
+
+
+def test_search_plugin_supports_the_hyphenated_dsl_scheme(search_plugin):
+    result = search_plugin.get_backend("elasticsearch-dsl://localhost:9200/index_name")
+
+    assert result["hosts"] == "https://localhost:9200/index_name"
+
+
+def test_search_plugin_falls_back_to_elasticsearch_for_unknown_qualifiers(
+    search_plugin,
+):
+    result = search_plugin.get_backend("elasticsearch+cloud://localhost:9200/index_name")
+
+    assert result["BACKEND"] == SEARCH_SCHEMES["elasticsearch"]
+    assert result["INDEX_NAME"] == "index_name"

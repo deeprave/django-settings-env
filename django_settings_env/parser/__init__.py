@@ -22,6 +22,23 @@ class ParsedUrl:
     path: Optional[str] = None
     qs: Optional[dict] = None
 
+    @property
+    def base_scheme(self) -> str:
+        """Return the unqualified portion of the URL scheme."""
+        return self.scheme.partition("+")[0]
+
+    @property
+    def scheme_qualifiers(self) -> tuple[str, ...]:
+        """Return any ``+``-separated scheme qualifiers."""
+        return tuple(self.scheme.split("+")[1:])
+
+    @property
+    def scheme_candidates(self) -> tuple[str, ...]:
+        """Return dispatch candidates in exact-match-first order."""
+        if self.base_scheme == self.scheme:
+            return (self.scheme,)
+        return self.scheme, self.base_scheme
+
     def to_url(
         self,
         scheme: Optional[str] = _none,

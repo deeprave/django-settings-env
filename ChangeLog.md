@@ -2,17 +2,23 @@
 
 ### Release 6.0.0
 
-- Simplified environment-variable lookup by requiring `prefix=` to be set only
-  when constructing `Env`. Method-level `prefix=` arguments are no longer
+- ⚠️  BREAKING CHANGE. Simplified environment-variable lookup by requiring `prefix=`
+  to be set only when constructing `Env`. Method-level `prefix=` arguments are no longer
   supported.
 - Plain variable names take precedence over their prefixed equivalents; for
   example, `DATABASE_URL` is used before `DJANGO_DATABASE_URL`.
 - Prefix handling now uses Envex's `_lookup_candidates()` hook, providing one
   extension point for alternate variable-name strategies.
 - Removed the recursive lookup workaround from `get()` and related helpers;
-  Envex now performs the shared lookup consistently.
+  Envex 5.1.0+ now performs the shared lookup consistently.
 - Fixed deferred setting resolution and rendering, including interpolation,
   typed values, falsy defaults, and independent settings instances.
+- Fixed task URLs using Unix sockets so their generated configuration retains
+  the socket URL.
+- URL handlers now match supported qualified schemes exactly, then fall back to
+  their base scheme while preserving unrecognised qualifiers in generated URLs.
+- New secrets_manager param can be passed from an existing Env to avoid
+  unnecessary vault connection and auth handling (new envex feature).
 
 ### Release 5.6.0
 

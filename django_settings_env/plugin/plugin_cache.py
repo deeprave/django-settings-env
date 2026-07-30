@@ -43,13 +43,14 @@ class CachePlugin(EnvPlugin):
         if not parsed.scheme:
             raise ValueError("Missing cache scheme or url parse error")
         try:
-            config["BACKEND"] = backend or CACHE_SCHEMES[parsed.scheme]
+            scheme = self.resolve_scheme(parsed, CACHE_SCHEMES)
+            config["BACKEND"] = backend or CACHE_SCHEMES[scheme]
         except KeyError as e:
             raise ValueError(f"Unknown cache scheme: {parsed.scheme}") from e
 
         host = parsed.hostname
         name = parsed.path
-        match parsed.scheme:
+        match scheme:
             case "filecache":
                 config["LOCATION"] = f"{host}{name}"
             case "redis" | "rediscache" | "pymemcache" | "redis+socket":
