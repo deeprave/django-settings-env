@@ -133,7 +133,7 @@ Only primitive types and `list` (comma separated values) are currently supported
 
 ### Django Specific Methods
 
-Some django specific functionality is included in this module, added via plugins:
+Some Django-specific functionality is included in this module, added via plugins:
 
 
 | Default variable | Parser               |
