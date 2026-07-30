@@ -16,9 +16,11 @@ def test_tasks_plugin_supports_redis_backends(tasks_plugin, scheme):
     assert result["URL"] == "redis://localhost:6379/default"
 
 
-def test_tasks_plugin_supports_redis_unix_sockets(tasks_plugin):
-    result = tasks_plugin.get_backend("redis://unix/var/run/redis.sock")
+@pytest.mark.parametrize("scheme", ["redis", "redis-queue"])
+def test_tasks_plugin_supports_redis_unix_sockets(tasks_plugin, scheme):
+    result = tasks_plugin.get_backend(f"{scheme}://unix/var/run/redis.sock")
 
+    assert result["BACKEND"] == TASKS_SCHEMES[scheme]
     assert result["URL"] == "unix:///var/run/redis.sock"
 
 
@@ -61,4 +63,13 @@ def test_tasks_plugin_falls_back_to_redis_and_preserves_unknown_qualifiers(
     result = tasks_plugin.get_backend("redis+cluster://localhost:6379/default")
 
     assert result["BACKEND"] == TASKS_SCHEMES["redis"]
+    assert result["URL"] == "redis+cluster://localhost:6379/default"
+
+
+def test_tasks_plugin_preserves_qualifiers_when_normalising_redis_queue(
+    tasks_plugin,
+):
+    result = tasks_plugin.get_backend("redis-queue+cluster://localhost:6379/default")
+
+    assert result["BACKEND"] == TASKS_SCHEMES["redis-queue"]
     assert result["URL"] == "redis+cluster://localhost:6379/default"

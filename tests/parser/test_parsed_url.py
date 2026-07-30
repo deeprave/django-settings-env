@@ -117,3 +117,11 @@ def test_parsed_url_exposes_qualified_scheme_dispatch_candidates():
     assert parsed.scheme_qualifiers == ("psycopg", "binary")
     assert parsed.scheme_candidates == ("postgresql+psycopg+binary", "postgresql")
     assert parsed.to_url() == "postgresql+psycopg+binary://example.com/application"
+
+
+def test_parsed_url_exposes_unqualified_scheme_dispatch_candidates():
+    parsed = URLParser()("https://example.com")
+
+    assert parsed.base_scheme == "https"
+    assert parsed.scheme_qualifiers == ()
+    assert parsed.scheme_candidates == ("https",)
