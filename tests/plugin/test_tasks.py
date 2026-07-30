@@ -1,5 +1,7 @@
 import pytest
+from django import VERSION as DJANGO_VERSION
 
+from django_settings_env.plugin import plugin_tasks
 from django_settings_env.plugin.plugin_tasks import TASKS_SCHEMES, TasksPlugin
 
 
@@ -8,53 +10,21 @@ def tasks_plugin():
     return TasksPlugin()
 
 
-@pytest.mark.parametrize("scheme", ["redis", "redis-queue"])
-def test_tasks_plugin_supports_redis_backends(tasks_plugin, scheme):
-    result = tasks_plugin.get_backend(f"{scheme}://localhost:6379/default")
-
-    assert result["BACKEND"] == TASKS_SCHEMES[scheme]
-    assert result["URL"] == "redis://localhost:6379/default"
-
-
-@pytest.mark.parametrize("scheme", ["redis", "redis-queue"])
-def test_tasks_plugin_supports_redis_unix_sockets(tasks_plugin, scheme):
-    result = tasks_plugin.get_backend(f"{scheme}://unix/var/run/redis.sock")
-
-    assert result["BACKEND"] == TASKS_SCHEMES[scheme]
-    assert result["URL"] == "unix:///var/run/redis.sock"
-
-
-@pytest.mark.parametrize("scheme", ["postgres", "postgresql", "mysql", "sqlite"])
-def test_tasks_plugin_supports_database_backends(tasks_plugin, scheme):
-    result = tasks_plugin.get_backend(f"{scheme}://localhost/application")
-
-    assert result["BACKEND"] == TASKS_SCHEMES[scheme]
-    assert result["DATABASE"] == "application"
-    assert result["URL"] == f"{scheme}://localhost/application"
-
-
+@pytest.mark.skipif(DJANGO_VERSION < (6, 0), reason="Django tasks require Django 6")
 @pytest.mark.parametrize("scheme", ["dummy", "immediate"])
-def test_tasks_plugin_supports_local_backends(tasks_plugin, scheme):
+def test_tasks_plugin_supports_django_backends(tasks_plugin, scheme):
     result = tasks_plugin.get_backend(f"{scheme}://")
 
     assert result["BACKEND"] == TASKS_SCHEMES[scheme]
     assert result["URL"] == f"{scheme}://"
 
 
-def test_tasks_plugin_merges_and_converts_options(tasks_plugin):
-    result = tasks_plugin.get_backend(
-        "redis://localhost/default?ENQUEUE_ON_COMMIT=true&QUEUES=high,low&timeout=30"
-    )
-
-    assert result["ENQUEUE_ON_COMMIT"] == "true"
-    assert result["QUEUES"] == "high,low"
-    assert result["BACKEND_OPTIONS"] == {"timeout": 30}
-
-
+@pytest.mark.skipif(DJANGO_VERSION < (6, 0), reason="Django tasks require Django 6")
 @pytest.mark.parametrize(
     ("url", "match"),
     [
         ("unknown://localhost", "Unknown tasks scheme: unknown"),
+        ("redis://localhost/default", "Unknown tasks scheme: redis"),
         ("://localhost", "Missing tasks scheme or url parse error"),
     ],
 )
@@ -63,19 +33,9 @@ def test_tasks_plugin_rejects_unknown_or_missing_schemes(tasks_plugin, url, matc
         tasks_plugin.get_backend(url)
 
 
-def test_tasks_plugin_falls_back_to_redis_and_preserves_unknown_qualifiers(
-    tasks_plugin,
-):
-    result = tasks_plugin.get_backend("redis+cluster://localhost:6379/default")
+def test_tasks_plugin_requires_django_6(monkeypatch, tasks_plugin):
+    if DJANGO_VERSION >= (6, 0):
+        monkeypatch.setattr(plugin_tasks, "DJANGO_VERSION", (5, 2))
 
-    assert result["BACKEND"] == TASKS_SCHEMES["redis"]
-    assert result["URL"] == "redis+cluster://localhost:6379/default"
-
-
-def test_tasks_plugin_preserves_qualifiers_when_normalising_redis_queue(
-    tasks_plugin,
-):
-    result = tasks_plugin.get_backend("redis-queue+cluster://localhost:6379/default")
-
-    assert result["BACKEND"] == TASKS_SCHEMES["redis-queue"]
-    assert result["URL"] == "redis+cluster://localhost:6379/default"
+    with pytest.raises(ValueError, match="tasks_url requires Django 6.0 or later"):
+        tasks_plugin.get_backend("immediate://")

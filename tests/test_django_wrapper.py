@@ -3,6 +3,7 @@ import io
 
 import envex
 import pytest
+from django import VERSION as DJANGO_VERSION
 from django.core.exceptions import ImproperlyConfigured
 
 from django_settings_env import Env, dot_env
@@ -66,6 +67,7 @@ def test_env_redis(monkeypatch):
     assert django_cache["BACKEND"] == "django.core.cache.backends.redis.RedisCache"
 
 
+@pytest.mark.skipif(DJANGO_VERSION < (6, 0), reason="Django tasks require Django 6")
 def test_env_tasks_url_uses_a_separate_default_variable():
     env = Env(environ={}, readenv=False)
     env["CACHE_URL"] = "redis://localhost:6379/0"
@@ -73,8 +75,7 @@ def test_env_tasks_url_uses_a_separate_default_variable():
 
     tasks = env.tasks_url()
 
-    assert tasks["BACKEND"].startswith("django.")
-    assert tasks["BACKEND"].endswith("ImmediateBackend")
+    assert tasks["BACKEND"] == "django.tasks.backends.immediate.ImmediateBackend"
     assert tasks["URL"] == "immediate://"
 
 

@@ -1,27 +1,10 @@
-from django.utils.version import get_complete_version
+from django import VERSION as DJANGO_VERSION
 
 from . import EnvPlugin, ConfigDict, register_plugin, convert_values
 
-DJANGO_VERSION = get_complete_version()
-
-MODULE_PREFIX = (
-    "django_tasks"
-    if (DJANGO_VERSION[0] < 5 > DJANGO_VERSION[0]) or DJANGO_VERSION[1] < 2
-    else "django.core.tasks"
-)
-REDIS_QUEUE_BACKEND = f"{MODULE_PREFIX}.backends.RedisQueue"
-REDIS_BACKEND = f"{MODULE_PREFIX}.backends.RedisBackend"
-DATABASE_BACKEND = f"{MODULE_PREFIX}.backends.database.DatabaseBackend"
-
 TASKS_SCHEMES = {
-    "redis": REDIS_BACKEND,
-    "redis-queue": REDIS_QUEUE_BACKEND,
-    "postgres": DATABASE_BACKEND,
-    "postgresql": DATABASE_BACKEND,
-    "mysql": DATABASE_BACKEND,
-    "sqlite": DATABASE_BACKEND,
-    "dummy": f"{MODULE_PREFIX}.backends.dummy.DummyBackend",
-    "immediate": f"{MODULE_PREFIX}.backends.immediate.ImmediateBackend",
+    "dummy": "django.tasks.backends.dummy.DummyBackend",
+    "immediate": "django.tasks.backends.immediate.ImmediateBackend",
 }
 
 
@@ -32,7 +15,10 @@ class TasksPlugin(EnvPlugin):
     VAR = "TASKS_URL"
     CONTEXTS = ["tasks"]
 
-    def get_backend(self, url: str, **kwargs) -> object:  # noqa: C901
+    def get_backend(self, url: str, **kwargs) -> object:
+        if DJANGO_VERSION < (6, 0):
+            raise ValueError("tasks_url requires Django 6.0 or later")
+
         parsed = self.parse_url(url, context=self.CONTEXTS)
         backend = kwargs.get("backend", None)
         options = ConfigDict(kwargs.get("options", {}))
@@ -46,24 +32,7 @@ class TasksPlugin(EnvPlugin):
         except KeyError as e:
             raise ValueError(f"Unknown tasks scheme: {parsed.scheme}") from e
 
-        url_scheme = parsed.scheme
-        name = parsed.path[1:] if parsed.path else None
-        match scheme:
-            case "redis" | "redis-queue":
-                if parsed.hostname == "unix":
-                    path = name or "tmp/redis.sock"
-                    config["URL"] = f"unix:///{path}"
-                elif scheme == "redis-queue":
-                    url_scheme = f"redis{parsed.scheme.removeprefix('redis-queue')}"
-            case "postgres" | "postgresql" | "mysql" | "sqlite":
-                # which db to use
-                config["DATABASE"] = parsed.path[1:] if parsed.path else "default"
-                config["URL"] = parsed.to_url()
-            case "dummy" | "immediate":
-                pass  # no additional options
-
-        if "URL" not in config:
-            config["URL"] = parsed.to_url(scheme=url_scheme)
+        config["URL"] = parsed.to_url()
         if parsed.qs:
             options.update(parsed.qs)
         convert_values(options)
