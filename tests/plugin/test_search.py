@@ -86,8 +86,9 @@ def test_search_plugin_supports_each_remaining_declared_backend(search_plugin, s
     assert result["BACKEND"] == SEARCH_SCHEMES[scheme]
 
 
-def test_search_plugin_supports_the_hyphenated_dsl_scheme(search_plugin):
-    result = search_plugin.get_backend("elasticsearch-dsl://localhost:9200/index_name")
+@pytest.mark.parametrize("scheme", ["elasticsearch-dsl", "elasticsearch+dsl"])
+def test_search_plugin_supports_both_dsl_schemes(search_plugin, scheme):
+    result = search_plugin.get_backend(f"{scheme}://localhost:9200/index_name")
 
     assert result["hosts"] == "https://localhost:9200/index_name"
 

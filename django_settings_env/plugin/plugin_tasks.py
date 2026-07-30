@@ -56,7 +56,7 @@ class TasksPlugin(EnvPlugin):
                     path = name or "tmp/redis.sock"
                     config["URL"] = f"unix:///{path}"
                 elif scheme == "redis-queue":
-                    url_scheme = "redis"
+                    url_scheme = f"redis{parsed.scheme.removeprefix('redis-queue')}"
             case "postgres" | "postgresql" | "mysql" | "sqlite":
                 # which db to use
                 config["DATABASE"] = parsed.path[1:] if parsed.path else "default"
