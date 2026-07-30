@@ -35,7 +35,7 @@ pip install django-settings-env
 # or: poetry add django-settings-env
 ```
 
-The package supports Python 3.12–3.14 and Django 6.x. It requires
+The package supports Python 3.12–3.14 and Django 5.2–6.x. It requires
 Envex 5.1 or later; installing `django-settings-env` installs the compatible
 version automatically.
 
@@ -304,11 +304,11 @@ URLs.
 
 - Provided by the `plugin_tasks` module.
 
-Returns a Django task backend configuration. Supported schemes are `redis`,
-`redis-queue`, `postgres`, `postgresql`, `mysql`, `sqlite`, `dummy`, and
-`immediate`. Redis task URLs may use a Unix socket; database task URLs populate
-both `DATABASE` and `URL`. Its current default environment variable is
-`TASKS_URL`; pass a variable name to `env.tasks_url()` to use another value.
+Returns a Django task backend configuration for Django's built-in `dummy` and
+`immediate` task backends, available in Django 6.0 or later. Additional task
+transports require a dedicated external integration. Its default environment
+variable is `TASKS_URL`; pass a variable name to `env.tasks_url()` to use
+another value.
 
 ## Django Class Settings
 
