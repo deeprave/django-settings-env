@@ -83,3 +83,28 @@ class TestLazySettingsIntegration:
 
         assert first.VALUE == "first"
         assert second.VALUE == "second"
+
+    def test_caches_each_setting_once_per_lazy_settings_instance(self):
+        class CountingEnv:
+            def __init__(self, value):
+                self.value = value
+                self.calls = 0
+
+            def __call__(self, *_args, **_kwargs):
+                self.calls += 1
+                return self.value
+
+        first_env = CountingEnv("first")
+        first = LazySettings()
+        first.configure(VALUE=deferred_setting(first_env, "VALUE"))
+
+        assert first.VALUE == "first"
+        assert first.VALUE == "first"
+        assert first_env.calls == 1
+
+        second_env = CountingEnv("second")
+        second = LazySettings()
+        second.configure(VALUE=deferred_setting(second_env, "VALUE"))
+
+        assert second.VALUE == "second"
+        assert second_env.calls == 1
