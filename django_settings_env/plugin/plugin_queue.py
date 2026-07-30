@@ -28,7 +28,8 @@ class QueuePlugin(EnvPlugin):
         if not parsed.scheme:
             raise ValueError("Missing queue scheme or url parse error")
         try:
-            config["BACKEND"] = backend or QUEUE_SCHEMES[parsed.scheme]
+            scheme = self.resolve_scheme(parsed, QUEUE_SCHEMES)
+            config["BACKEND"] = backend or QUEUE_SCHEMES[scheme]
         except KeyError as e:
             valid_schemes = ", ".join(sorted(QUEUE_SCHEMES.keys()))
             raise ValueError(
@@ -36,7 +37,7 @@ class QueuePlugin(EnvPlugin):
             ) from e
 
         name = parsed.path
-        match parsed.scheme:
+        match scheme:
             case "redis" | "redisqueue" | "pymemqueue" | "redis+socket" | "rediss":
                 # note: SSL is not supported for unix domain sockets
                 if parsed.hostname == "unix" or not parsed.hostname:

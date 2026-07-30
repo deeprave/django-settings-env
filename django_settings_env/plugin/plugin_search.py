@@ -37,7 +37,8 @@ class SearchPlugin(EnvPlugin):
         if not parsed.scheme:
             raise ValueError("Missing search scheme or url parse error")
         try:
-            config["BACKEND"] = engine or SEARCH_SCHEMES[parsed.scheme]
+            scheme = self.resolve_scheme(parsed, SEARCH_SCHEMES)
+            config["BACKEND"] = engine or SEARCH_SCHEMES[scheme]
         except KeyError as e:
             raise ValueError(f"Unknown search scheme: {parsed.scheme}") from e
 
@@ -61,7 +62,7 @@ class SearchPlugin(EnvPlugin):
         config["KWARGS"] = options.get("KWARGS", None)
         config["TIMEOUT"] = options.get("TIMEOUT", None)
         config["INDEX_NAME"] = options.get("INDEX_NAME", None)
-        match parsed.scheme:
+        match scheme:
             case "elasticsearch+dsl" | "elasticsearch-dsl":
                 config["hosts"] = parsed.to_url(scheme=url_scheme)
             case "elasticsearch" | "elasticsearch2":

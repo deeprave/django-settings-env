@@ -1,5 +1,6 @@
 import contextlib
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 from typing import Dict, Type, Any
 import threading
 
@@ -68,6 +69,14 @@ class EnvPlugin(ABC):
 
     def parse_url(self, url: str, **kwargs) -> ParsedUrl:
         return self.parser(url, **kwargs)
+
+    @staticmethod
+    def resolve_scheme(parsed: ParsedUrl, schemes: Mapping[str, Any]) -> str:
+        """Find the supported scheme, preferring an exact qualified match."""
+        for candidate in parsed.scheme_candidates:
+            if candidate in schemes:
+                return candidate
+        raise KeyError(parsed.scheme)
 
     @abstractmethod
     def get_backend(self, url: str, **kwargs) -> object:

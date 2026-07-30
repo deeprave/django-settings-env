@@ -1,5 +1,5 @@
 import pytest
-from django_settings_env.plugin.plugin_email import EmailPlugin
+from django_settings_env.plugin.plugin_email import EMAIL_SCHEMES, EmailPlugin
 
 
 def test_get_backend_valid_smtp():
@@ -69,3 +69,29 @@ def test_get_backend_with_update_dict():
     plugin.get_backend(url, update=update_dict)
     assert update_dict["EMAIL_HOST"] == "localhost"
     assert update_dict["EMAIL_PORT"] == 25
+
+
+@pytest.mark.parametrize(
+    "scheme",
+    ["smtp+tls", "consolemail", "filemail", "memorymail", "dummymail", "amazonses", "amazon-ses"],
+)
+def test_email_plugin_supports_each_remaining_declared_scheme(scheme):
+    config = EmailPlugin().get_backend(f"{scheme}://localhost")
+
+    assert config["EMAIL_BACKEND"] == EMAIL_SCHEMES[scheme]
+
+
+def test_email_plugin_preserves_tls_precedence_for_the_exact_qualified_scheme():
+    config = EmailPlugin().get_backend("smtp+tls://localhost")
+
+    assert config["EMAIL_USE_TLS"] is True
+    assert config["EMAIL_PORT"] == 587
+
+
+def test_email_plugin_falls_back_without_inferring_unknown_qualifier_behavior():
+    config = EmailPlugin().get_backend("smtp+custom://localhost")
+
+    assert config["EMAIL_BACKEND"] == EMAIL_SCHEMES["smtp"]
+    assert config["EMAIL_PORT"] == 25
+    assert "EMAIL_USE_TLS" not in config
+    assert "EMAIL_USE_SSL" not in config

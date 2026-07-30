@@ -65,7 +65,11 @@ class DatabasePlugin(EnvPlugin):
         backend = kwargs.get("backend", None)
         options = kwargs.get("options", {})
         config = ConfigDict()
-        if parsed.scheme == "sqlite":
+        try:
+            scheme = self.resolve_scheme(parsed, DB_ENGINES)
+        except KeyError as e:
+            raise ValueError(f"Unsupported database scheme: {parsed.scheme}") from e
+        if scheme == "sqlite":
             config["NAME"] = (
                 ":memory:"
                 if not parsed.path or re.match(r"/:?memory:?", parsed.path)
@@ -73,10 +77,7 @@ class DatabasePlugin(EnvPlugin):
             )
             config["ENGINE"] = backend or SQLITE_ENGINE
         else:
-            try:
-                config["ENGINE"] = backend or DB_ENGINES[parsed.scheme]
-            except KeyError as e:
-                raise ValueError(f"Unsupported database scheme: {parsed.scheme}") from e
+            config["ENGINE"] = backend or DB_ENGINES[scheme]
             config["NAME"] = parsed.path[1:] if parsed.path else parsed.path
             config["HOST"] = parsed.hostname
             config["PORT"] = parsed.port or None

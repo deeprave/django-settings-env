@@ -3,7 +3,7 @@
 repos:
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: no-commit-to-branch
         args: ['--branch', 'main']
@@ -17,7 +17,7 @@ repos:
       - id: requirements-txt-fixer
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.6
+    rev: v0.16.0
     hooks:
       - id: ruff
         args:
@@ -28,7 +28,7 @@ repos:
     hooks:
       - id: pytest
         name: pytest
-        entry: pytest --cov --cov-config=.coveragerc
+        entry: uv run pytest --cov --cov-config=.coveragerc
         language: system
         types: [python]
         pass_filenames: false

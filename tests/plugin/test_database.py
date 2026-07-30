@@ -1,5 +1,5 @@
 import pytest
-from django_settings_env.plugin.plugin_database import DatabasePlugin
+from django_settings_env.plugin.plugin_database import DB_ENGINES, DatabasePlugin
 
 
 @pytest.fixture
@@ -78,3 +78,26 @@ def test_database_plugin_get_backend_withuserpass(database_plugin):
         "PORT": 5432,
         "PASSWORD": "password",
     }
+
+
+@pytest.mark.parametrize(
+    ("scheme", "engine"),
+    [(scheme, engine) for scheme, engine in DB_ENGINES.items() if scheme != "sqlite"],
+)
+def test_database_plugin_supports_each_declared_network_scheme(
+    database_plugin, scheme, engine
+):
+    config = database_plugin.get_backend(f"{scheme}://localhost/example")
+
+    assert config["ENGINE"] == engine
+    assert config["NAME"] == "example"
+    assert config["HOST"] == "localhost"
+
+
+def test_database_plugin_falls_back_to_the_base_scheme_for_unknown_qualifiers(
+    database_plugin,
+):
+    config = database_plugin.get_backend("postgresql+psycopg://localhost/application")
+
+    assert config["ENGINE"] == DB_ENGINES["postgresql"]
+    assert config["NAME"] == "application"
