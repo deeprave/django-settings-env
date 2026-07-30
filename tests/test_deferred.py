@@ -1,78 +1,85 @@
+from types import SimpleNamespace
+
 import pytest
-from unittest.mock import MagicMock
+from django.conf import LazySettings
+
+from django_settings_env import Env
 from django_settings_env.deferred import DeferredSetting
 
 
-@pytest.fixture
-def mock_env():
-    return MagicMock()
+def deferred_setting(env, name=None, **kwargs):
+    scope = SimpleNamespace(f_locals={})
+    setting = DeferredSetting(env, scope=scope, kwargs={"name": name, **kwargs})
+    if name is not None:
+        scope.f_locals[name] = setting
+    return setting
 
 
-@pytest.fixture
-def mock_scope():
-    class MockScope:
-        f_locals = {}
+class TestDeferredSettingRendering:
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        [("value", "value"), (0, "0"), (False, "False"), (None, "")],
+    )
+    def test_renders_environment_and_default_values_as_strings(self, value, expected):
+        setting = deferred_setting(
+            Env(environ={}, readenv=False), "VALUE", default=value
+        )
 
-    return MockScope()
+        assert str(setting) == expected
+        assert f"{setting}" == expected
 
+    def test_applies_string_formatting_to_the_resolved_value(self):
+        setting = deferred_setting(
+            Env(environ={"DJANGO_VALUE": "value"}, readenv=False), "VALUE"
+        )
 
-@pytest.mark.parametrize(
-    "name, env_value, expected",
-    [
-        ("TEST_VAR", "value1", "value1"),
-        ("ANOTHER_VAR", "value2", "value2"),
-        ("MISSING_VAR", None, None),  # Edge case: variable not in env
-    ],
-    ids=["existing_var", "another_existing_var", "missing_var"],
-)
-def test_setting_happy_path(mock_env, mock_scope, name, env_value, expected):
-    # Arrange
-    mock_env.get.return_value = env_value
-    mock_scope.f_locals[name] = None
-    deferred_setting = DeferredSetting(mock_env, scope=mock_scope, kwargs={"name": name})
-
-    # Act
-    result = deferred_setting.setting(name)
-
-    # Assert
-    assert result == expected
+        assert f"{setting:>8}" == "   value"
 
 
-@pytest.mark.parametrize(
-    "name, expected",
-    [
-        (None, ""),  # Edge case: name is None
-        ("", ""),  # Edge case: empty string as name
-    ],
-    ids=["none_name", "empty_name"],
-)
-def test_setting_edge_cases(mock_env, mock_scope, name, expected):
-    # Arrange
-    deferred_setting = DeferredSetting(mock_env, scope=mock_scope, kwargs={"name": name})
+class TestDeferredSettingResolution:
+    def test_discovers_the_assigned_name_when_rendered_directly(self):
+        env = Env(environ={"DJANGO_VALUE": "resolved"}, readenv=False)
+        scope = SimpleNamespace(f_locals={})
+        setting = DeferredSetting(env, scope=scope, kwargs={"name": None})
+        scope.f_locals["VALUE"] = setting
 
-    # Act
-    result = deferred_setting.setting(name)
+        assert str(setting) == "resolved"
 
-    # Assert
-    assert result == expected
+    def test_preserves_type_conversion_when_the_value_is_deferred(self):
+        setting = deferred_setting(
+            Env(environ={"DJANGO_RETRIES": "2"}, readenv=False),
+            "RETRIES",
+            type=int,
+        )
+
+        assert setting.setting("RETRIES") == 2
+        assert str(setting) == "2"
 
 
-@pytest.mark.parametrize(
-    "name, env_value, expected_repr",
-    [
-        ("TEST_VAR", "value1", "value1"),
-        ("ANOTHER_VAR", "value2", "value2"),
-        ("MISSING_VAR", None, ""),  # Edge case: variable not in env
-    ],
-    ids=["repr_existing_var", "repr_another_existing_var", "repr_missing_var"],
-)
-def test_repr(mock_env, mock_scope, name, env_value, expected_repr):
-    # Arrange
-    mock_env.get.return_value = env_value
-    deferred_setting = DeferredSetting(mock_env, scope=mock_scope, kwargs={"name": name})
+class TestLazySettingsIntegration:
+    def test_resolves_before_string_interpolation(self):
+        setting = deferred_setting(
+            Env(environ={"DJANGO_VALUE": "resolved"}, readenv=False), "VALUE"
+        )
+        settings = LazySettings()
+        settings.configure(VALUE=setting)
 
-    # Act
-    result = repr(deferred_setting)
+        assert settings.VALUE == "resolved"
+        assert f"value={settings.VALUE}" == "value=resolved"
 
-    # Assert
-    assert result == expected_repr
+    def test_isolates_same_named_settings_between_lazy_settings_instances(self):
+        first = LazySettings()
+        first.configure(
+            VALUE=deferred_setting(
+                Env(environ={"DJANGO_VALUE": "first"}, readenv=False), "VALUE"
+            )
+        )
+        second = LazySettings()
+        second.configure(
+            VALUE=deferred_setting(
+                Env(environ={"DJANGO_VALUE": "second"}, readenv=False), "VALUE"
+            )
+        )
+
+        assert first.VALUE == "first"
+        assert second.VALUE == "second"

@@ -6,9 +6,7 @@ from django.conf import LazySettings
 
 def cache_setting(self, name, value):
     if isinstance(value, DeferredSetting):
-        if not hasattr(cache_setting, "cache"):
-            cache_setting.cache = {}
-        cache = cache_setting.cache
+        cache = self.__dict__.setdefault("_django_settings_env_deferred_cache", {})
         if name not in cache:
             cache[name] = value.setting(name)
         value = cache[name]
@@ -64,7 +62,13 @@ class DeferredSetting:
 
     def setting(self, name):
         name = self.__get_variable_name(name)
-        return self._env.get(name, **self._kwargs) if name else ""
+        return self._env(name, **self._kwargs) if name else ""
 
     def __repr__(self):
-        return self.setting(self._name) or ""
+        value = self.setting(self._name)
+        return "" if value is None else str(value)
+
+    __str__ = __repr__
+
+    def __format__(self, format_spec):
+        return format(str(self), format_spec)

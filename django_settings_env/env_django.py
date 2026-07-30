@@ -6,13 +6,10 @@ Wrapper around os.environ with django config value parsers
 import contextlib
 import inspect
 import importlib
-from typing import List
-
 from django.core.exceptions import ImproperlyConfigured
 from envex import Env
 
 _DEFAULT_PREFIX = "DJANGO_"
-_USE_DEFAULT_PREFIX = object()
 
 
 class DjangoEnv(Env):
@@ -57,86 +54,19 @@ class DjangoEnv(Env):
         super().__init__(*args, **kwargs)
         self._init_plugins()
 
-    def _with_prefix(self, var, prefix):
-        if prefix is _USE_DEFAULT_PREFIX:
-            prefix = self.prefix
-        if (
-            var
-            and prefix
-            and not (isinstance(var, str) and var.startswith(prefix))
-            and super().get(var, None) is None
-        ):
-            var = f"{prefix}{var}"
-        return var
-
-    def unset(self, var, prefix=_USE_DEFAULT_PREFIX):
-        super().unset(self._with_prefix(var, prefix=prefix))
-
-    def is_set(self, var, prefix=_USE_DEFAULT_PREFIX):
-        return super().is_set(self._with_prefix(var, prefix=prefix))
-
-    def is_all_set(
-        self, *_vars: str | List[str | list | tuple], prefix=_USE_DEFAULT_PREFIX
-    ):
-        def check_nested(v):
-            if isinstance(v, (list, tuple)):
-                return all(check_nested(item) for item in v)
-            return self.is_set(self._with_prefix(v, prefix=prefix))
-
-        return all(check_nested(v) for v in _vars)
-
-    def is_any_set(
-        self, *_vars: str | List[str | list | tuple], prefix=_USE_DEFAULT_PREFIX
-    ):
-        def check_nested(v):
-            if isinstance(v, (list, tuple)):
-                return any(check_nested(item) for item in v)
-            return self.is_set(v, prefix=prefix)
-
-        return any(check_nested(v) for v in _vars)
-
-    def get(self, var, default=None, prefix=_USE_DEFAULT_PREFIX):
-        return super().get(self._with_prefix(var, prefix=prefix), default=default)
-
-    def int(self, var, default=None, prefix=_USE_DEFAULT_PREFIX) -> int:
-        val = self.get(var, default=default, prefix=prefix)
-        return self._int(val)
-
-    def float(self, var, default=None, prefix=_USE_DEFAULT_PREFIX) -> float:
-        val = self.get(var, default=default, prefix=prefix)
-        return self._float(val)
-
-    def bool(self, var, default=None, prefix=_USE_DEFAULT_PREFIX) -> bool:
-        val = self.get(var, default=default, prefix=prefix)
-        return bool(val) if isinstance(val, (bool, int)) else self.is_true(val)
-
-    def list(self, var, default=None, prefix=_USE_DEFAULT_PREFIX) -> list:
-        val = self.get(var, default=default, prefix=prefix)
-        return val if isinstance(val, (list, tuple)) else self._list(val)
-
-    def check_var(self, var, default=None, prefix=_USE_DEFAULT_PREFIX, raise_error=True):
-        """
-        Override variable name to insert prefix unless the raw var is set
-        """
-        var = self._with_prefix(var, prefix=prefix)
-        return super().check_var(var, default=default, raise_error=raise_error)
-
-    django_env_typemap = {
-        "int": int,
-        "bool": bool,
-        "float": float,
-        "list": list,
-    }
+    def _lookup_candidates(self, var):
+        """Try the raw name first, then the constructor-configured prefix."""
+        if not self.prefix or not isinstance(var, str) or var.startswith(self.prefix):
+            return (var,)
+        return var, f"{self.prefix}{var}"
 
     # noinspection PyShadowingBuiltins
     def __call__(self, var=None, default=None, **kwargs):
-        prefix = kwargs.pop("prefix", _USE_DEFAULT_PREFIX)
         # This is tied to django-class-settings (optional dependency), which allows
         # omitting the 'name' parameter and using the setting name instead
         if var is None:
             _kwargs = kwargs | {
                 "name": var,
-                "prefix": prefix if prefix is _USE_DEFAULT_PREFIX else self.prefix,
                 "default": default,
             }
             # try using class_settings version if installed
@@ -155,21 +85,7 @@ class DjangoEnv(Env):
             # class settings not installed
             return DeferredSetting(env=self, scope=scope, kwargs=_kwargs)
 
-        # set to the provided default if not already set
-        if (
-            default is not None
-            and not self.is_set(var)
-            and not self.is_set(self._with_prefix(var, prefix=prefix))
-        ):
-            self.set(var, default)
-        # resolve entry point by the type
-        with contextlib.suppress(KeyError):
-            _type = kwargs.pop("type", "str")
-            _type = _type if isinstance(_type, str) else _type.__name__
-            return self.django_env_typemap[_type](
-                self, var, default=default, prefix=prefix
-            )
-        return self.get(var, default=default, prefix=prefix)
+        return super().__call__(var, default=default, **kwargs)
 
     @staticmethod
     def _init_plugins():
@@ -208,7 +124,6 @@ class DjangoEnv(Env):
                 default=None,
                 backend=None,
                 engine=None,
-                prefix=_USE_DEFAULT_PREFIX,
                 **kwargs,
             ):
                 if backend and engine:
@@ -217,7 +132,7 @@ class DjangoEnv(Env):
                     # Use the default value specified by the plugin if necessary
                     var = getattr(rplugin, "VAR", None)
                 # Determine the URL using the check_var method
-                url = self.check_var(var, prefix=prefix, default=default)
+                url = self.check_var(var, default=default)
                 # Call the registered plugin handler with the resolved arguments
                 kwargs["backend"] = backend
                 kwargs["engine"] = engine

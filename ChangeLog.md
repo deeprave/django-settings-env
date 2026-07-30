@@ -1,5 +1,19 @@
 # ChangeLog
 
+### Release 6.0.0
+
+- Simplified environment-variable lookup by requiring `prefix=` to be set only
+  when constructing `Env`. Method-level `prefix=` arguments are no longer
+  supported.
+- Plain variable names take precedence over their prefixed equivalents; for
+  example, `DATABASE_URL` is used before `DJANGO_DATABASE_URL`.
+- Prefix handling now uses Envex's `_lookup_candidates()` hook, providing one
+  extension point for alternate variable-name strategies.
+- Removed the recursive lookup workaround from `get()` and related helpers;
+  Envex now performs the shared lookup consistently.
+- Fixed deferred setting resolution and rendering, including interpolation,
+  typed values, falsy defaults, and independent settings instances.
+
 ### Release 5.6.0
 
 - Introduces a new QueuePlugin for handling queue configuration via queue URLs.
