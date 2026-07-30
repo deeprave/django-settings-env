@@ -73,6 +73,7 @@ def test_env_tasks_url_uses_a_separate_default_variable():
 
     tasks = env.tasks_url()
 
+    assert tasks["BACKEND"].startswith("django.")
     assert tasks["BACKEND"].endswith("ImmediateBackend")
     assert tasks["URL"] == "immediate://"
 
