@@ -10,8 +10,8 @@ runs:
         python-version: ${{ inputs.python-version }}
 
     - name: Setup uv
-      # This trusted action intentionally tracks upstream updates.
-      uses: astral-sh/setup-uv@v9
+      # setup-uv publishes release tags only; v9.0.0 is the available v9 tag.
+      uses: astral-sh/setup-uv@v9.0.0
       with:
         version: 'latest'
 
