@@ -51,9 +51,15 @@ def test_tasks_plugin_merges_and_converts_options(tasks_plugin):
     assert result["BACKEND_OPTIONS"] == {"timeout": 30}
 
 
-@pytest.mark.parametrize("url", ["unknown://localhost", "//localhost"])
-def test_tasks_plugin_rejects_unknown_or_missing_schemes(tasks_plugin, url):
-    with pytest.raises(ValueError):
+@pytest.mark.parametrize(
+    ("url", "match"),
+    [
+        ("unknown://localhost", "Unknown tasks scheme: unknown"),
+        ("://localhost", "Missing tasks scheme or url parse error"),
+    ],
+)
+def test_tasks_plugin_rejects_unknown_or_missing_schemes(tasks_plugin, url, match):
+    with pytest.raises(ValueError, match=match):
         tasks_plugin.get_backend(url)
 
 

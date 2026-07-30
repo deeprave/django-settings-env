@@ -18,7 +18,7 @@
 - URL handlers now match supported qualified schemes exactly, then fall back to
   their base scheme while preserving unrecognised qualifiers in generated URLs.
 - New secrets_manager param can be passed from an existing Env to avoid
-  unnecessary vault connection and auth handling (new envex feature).
+  unnecessary vault connection and auth handling (new Envex feature).
 
 ### Release 5.6.0
 
