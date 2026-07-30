@@ -105,7 +105,7 @@ Django settings.
 It will typically avoid the need to separate local/development configuration settings from production settings, as values are determined at runtime by the content of the environment, `.env` and `.env.enc` files, or values obtained from a HashiCorp vault.
 
 By default, the DjangoEnv class can apply a given prefix (default is "DJANGO_") to environment variables names, but will only be used in that form if the raw (no prefix) variable name is not in use in the environment.
-To change the prefix including setting it to an empty string, pass the prefix= kwarg to `Env()`, and many of the methods can also accept a `prefix=` keyword argument if required.
+To change the prefix including setting it to an empty string, pass the `prefix=` keyword argument to `Env()`. The configured prefix then applies to every method that accepts a variable name.
 
 One key difference between `envex` and `django-settings-env` is that the latter will read .env files by default, and will automatically search parent directories if one is not found where initially expected. This default behaviour needs to be explicitly enabled in `envex`.
 

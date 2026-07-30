@@ -269,9 +269,11 @@ def test_is_all_set():
     assert env.is_all_set("TEST_VAR1", ["TEST_VAR2", "TEST_VAR3"])
     assert not env.is_all_set("TEST_VAR1", ["TEST_VAR2", "TEST_VAR4"])
 
-    # Test with prefix
-    env["DJANGO_PREFIX_VAR"] = "value"
-    assert env.is_all_set("PREFIX_VAR", prefix="DJANGO_")
+    # The constructor prefix applies to inherited Envex helpers as well.
+    prefixed_env = Env(environ={})
+    prefixed_env["DJANGO_PREFIX_VAR"] = "value"
+    assert prefixed_env.is_all_set("PREFIX_VAR")
+    assert prefixed_env.pop("PREFIX_VAR") == "value"
 
     # Test with a complex nested structure
     assert env.is_all_set("TEST_VAR1", ["TEST_VAR2", ("TEST_VAR3",)])
@@ -298,9 +300,10 @@ def test_is_any_set():
     assert env.is_any_set("TEST_VAR4", ["TEST_VAR2", "TEST_VAR3"])
     assert not env.is_any_set("TEST_VAR4", ["TEST_VAR5", "TEST_VAR6"])
 
-    # Test with prefix
-    env["DJANGO_PREFIX_VAR"] = "value"
-    assert env.is_any_set("PREFIX_VAR", prefix="DJANGO_")
+    # Prefix selection is configured once in the constructor.
+    prefixed_env = Env(environ={})
+    prefixed_env["DJANGO_PREFIX_VAR"] = "value"
+    assert prefixed_env.is_any_set("PREFIX_VAR")
 
     # Test with complex nested structure
     assert env.is_any_set("TEST_VAR4", ["TEST_VAR5", ("TEST_VAR1",)])
