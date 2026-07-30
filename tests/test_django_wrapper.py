@@ -66,6 +66,17 @@ def test_env_redis(monkeypatch):
     assert django_cache["BACKEND"] == "django.core.cache.backends.redis.RedisCache"
 
 
+def test_env_tasks_url_uses_a_separate_default_variable():
+    env = Env(environ={}, readenv=False)
+    env["CACHE_URL"] = "redis://localhost:6379/0"
+    env["TASKS_URL"] = "immediate://"
+
+    tasks = env.tasks_url()
+
+    assert tasks["BACKEND"].endswith("ImmediateBackend")
+    assert tasks["URL"] == "immediate://"
+
+
 def test_env_email(monkeypatch):
     monkeypatch.setattr(dot_env, "open_env", dotenv)
     env = Env(environ={})

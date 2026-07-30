@@ -12,14 +12,10 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
-    "Framework :: Django :: 4.2",
-    "Framework :: Django :: 5.0",
-    "Framework :: Django :: 5.1",
-    "Framework :: Django :: 5.2",
     "Framework :: Django :: 6.0",
 ]
 dependencies = [
-    "django>=5.0",
+    "django>=6.0,<7.0",
     "envex>=5.1.0",
     "yarl>=1.18.3",
 ]
