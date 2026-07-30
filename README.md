@@ -1,13 +1,11 @@
 # django-settings-env
 
-12-factor.net settings handler for Django.
+Django settings support built on [envex](https://pypi.org/project/envex/), with
+type-aware environment values, deferred settings, and URL-based Django backend
+configuration.
 
 [![PyPI version](https://badge.fury.io/py/django-settings-env.svg)](https://badge.fury.io/py/django-settings-env)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-
-## [envex](https://pypi.org/project/envex/)
-
-[![PyPI version](https://badge.fury.io/py/envex.svg)](https://badge.fury.io/py/envex)
 
 ## Introduction
 
@@ -33,11 +31,13 @@ including expansion of template variables, which can enhance Don't Repeat Yourse
 
 ```shell
 pip install django-settings-env
-...
-poetry add django-settings-env
-...
-uv add django-settings-env
+# or: uv add django-settings-env
+# or: poetry add django-settings-env
 ```
+
+The package supports Python 3.12–3.14 and Django 6.x. It requires
+Envex 5.1 or later; installing `django-settings-env` installs the compatible
+version automatically.
 
 ## Usage
 
@@ -75,8 +75,8 @@ settings; this can be customised by:
 These options are all available via the `envex` module.
 
 Wherever an Env instance is available, the environment can be accessed with env["VAR_NAME"], or env("VAR_NAME").
-The latter is a convenience method that will return the value of the variable or None if it is not set.
-A `default=<value>\<value\>` kwarg may also be used and is returned if the specified variable is not set.
+The latter is a convenience method that returns the value of the variable or `None` if it is not set.
+A `default=<value>` keyword argument may also be used and is returned if the specified variable is not set.
 The "call" syntax also has another advantage in that it can be used to set a default value if the variable is currently unset.
 When assigned to a variable of the same name as the variable in the current scope, the variable does not need to be
 specified, for example:
@@ -104,8 +104,18 @@ Explicitly specifying the variable name, however, will still work in this case.
 Django settings.
 It will typically avoid the need to separate local/development configuration settings from production settings, as values are determined at runtime by the content of the environment, `.env` and `.env.enc` files, or values obtained from a HashiCorp vault.
 
-By default, the DjangoEnv class can apply a given prefix (default is "DJANGO_") to environment variables names, but will only be used in that form if the raw (no prefix) variable name is not in use in the environment.
-To change the prefix including setting it to an empty string, pass the `prefix=` keyword argument to `Env()`. The configured prefix then applies to every method that accepts a variable name.
+By default, `Env` applies the `DJANGO_` prefix to environment-variable names as a
+fallback: the plain name wins when both are set. For example, `DATABASE_URL`
+takes precedence over `DJANGO_DATABASE_URL`.
+
+Set the prefix when constructing `Env`, including an empty string to disable it:
+
+```python
+env = Env(prefix="PROJECT_")
+```
+
+The configured prefix applies to every method that accepts a variable name.
+`prefix=` is not supported on individual lookup methods.
 
 One key difference between `envex` and `django-settings-env` is that the latter will read .env files by default, and will automatically search parent directories if one is not found where initially expected. This default behaviour needs to be explicitly enabled in `envex`.
 
@@ -126,24 +136,37 @@ Only primitive types and `list` (comma separated values) are currently supported
 Some django specific functionality is included in this module, added via plugins:
 
 
-| Default Var  | Parser               |
-| ------------ | -------------------- |
-| DATABASE_URL | `env.database_url()` |
-| CACHE_URL    | `env.cache_url()`    |
-| EMAIL_URL    | `env.email_url()`    |
-| SEARCH_URL   | `env.search_url()`   |
+| Default variable | Parser               |
+| ---------------- | -------------------- |
+| DATABASE_URL     | `env.database_url()` |
+| CACHE_URL        | `env.cache_url()`    |
+| EMAIL_URL        | `env.email_url()`    |
+| SEARCH_URL       | `env.search_url()`   |
+| QUEUE_URL        | `env.queue_url()`    |
+| TASKS_URL        | `env.tasks_url()`    |
 
 Each of these values can be injected into django settings via the environment, typically from a `.env(.enc)` file at the project root, or set from a variable in vault.
 Individual components of these URLs can also be set, but passing the URL provides a way of setting all the required
 components, including options as query parameters.
 
-The url specified includes a scheme that determines the "backend" class, engine or module that handles the
+The URL includes a scheme that determines the backend class, engine, or module that handles the
 corresponding functionality as documented below.
-This can be overridden using the `backend=` parameter even if the scheme is not known by `django-settings-env`.
+For supported URL handlers, `backend=` (or `engine=` for search) can override
+the selected backend. The URL scheme must still be supported.
 
 URLs may include options, in the form of query options, i.e. `?option=value&option2=value2` etc. that are specific to
 the engine or backend being used.
 Options are usually case-sensitive, and must use the same case as expected by the backend.
+
+### Qualified schemes
+
+Handlers support schemes with `+` qualifiers. An explicitly supported qualified
+scheme is matched first; otherwise the handler falls back to the base scheme.
+For example, `postgresql+psycopg://...` uses the PostgreSQL handler and
+`redis+cluster://...` uses the Redis handler. Unknown qualifiers are retained
+when a handler returns a URL, so configurations can pass them on to the backend.
+Known qualifiers such as `smtp+ssl` and `redis+socket` retain their specialised
+behaviour.
 
 ### `database_url`
 
@@ -152,7 +175,7 @@ Options are usually case-sensitive, and must use the same case as expected by th
 Evaluate a URL in the form
 
 ```
-schema://[username:[password]@]host_or_path[:port]/name[?...options]
+scheme://[username:[password]@]host_or_path[:port]/name[?...options]
 ```
 
 Supported schemas:
@@ -196,7 +219,7 @@ DATABASES = {
 Evaluate a URL in the form
 
 ```
-schema://[username:[password]@]host_or_path[:port]/[name][?...options]
+scheme://[username:[password]@]host_or_path[:port]/[name][?...options]
 ```
 
 Supported schemas:
@@ -206,10 +229,12 @@ Supported schemas:
 | dbcache     | cache in database            |
 | dummycache  | dummy cache - "no cache"     |
 | filecache   | cache data in files          |
+| locmem      | cache in memory              |
 | locmemcache | cache in memory              |
 | memcache    | memcached (python-memcached) |
 | pymemcache  | memcached (pymemcache)       |
 | rediscache  | redis                        |
+| redis+socket| redis over a Unix socket     |
 | redis       | redis                        |
 | rediss      | redis (ssl connection)       |
 
@@ -220,7 +245,7 @@ Supported schemas:
 Evaluate a URL in the form
 
 ```
-schema://[username[@domain]:[password]@]host_or_path[:port]/[?...options]
+scheme://[username[@domain]:[password]@]host_or_path[:port]/[?...options]
 ```
 
 Supported schemas:
@@ -228,15 +253,15 @@ Supported schemas:
 | Scheme      | Service                       |
 | ----------- | ----------------------------- |
 | smtp        | smtp, no SSL                  |
-| smtps       | smtp over SSL                 |
-| smtp+tls    | smtp over SSL                 |
-| smtp+ssl    | smtp over SSL                 |
+| smtps       | SMTP with TLS (default port 587) |
+| smtp+tls    | SMTP with TLS (default port 587) |
+| smtp+ssl    | SMTP with SSL (default port 465) |
 | consolemail | publish mail to console (dev) |
 | filemail    | append email to file (dev)    |
 | memorymail  | store emails in memory        |
 | dummymail   | do-nothing email backend      |
-| amazonses   | Amazon Wimple Email Service   |
-| amazon-ses  | Amazon Wimple Email Service   |
+| amazonses   | Amazon Simple Email Service   |
+| amazon-ses  | Amazon Simple Email Service   |
 
 ### `search_url`
 
@@ -245,7 +270,7 @@ Supported schemas:
 Evaluate a URL in the form
 
 ```
-schema://[username:[password]@]host_or_path[:port]/[index]
+scheme://[username:[password]@]host_or_path[:port]/[index]
 ```
 
 Supported schemas:
@@ -254,6 +279,7 @@ Supported schemas:
 | ----------------- | -------------------------------------------- |
 | elasticsearch     | elasticsearch (django-haystack)              |
 | elasticsearch2    | elasticsearch2 (django-haystack)             |
+| elasticsearch+dsl | elasticsearch-dsl                            |
 | elasticsearch-dsl | elasticsearch-dsl                            |
 | solr              | Apache solr (django-haystack)                |
 | whoosh            | Whoosh search engine (pure python, haystack) |
@@ -265,9 +291,28 @@ Note that django-haystack may require many additional settings not supported by 
 providing the ability to easily relate ES documents+indexes to Django models.
 The DSL version also supports more contemporary versions of Elasticsearch and is well maintained.
 
+### `queue_url`
+
+- Provided by the `plugin_queue` module.
+
+Returns a Django cache-style queue configuration with `BACKEND` and `URL`.
+Supported schemes are `pymemqueue`, `redisqueue`, `redis`, `rediss`, and
+`redis+socket`. Redis URLs using `unix` as the host are converted to Unix-socket
+URLs.
+
+### `tasks_url`
+
+- Provided by the `plugin_tasks` module.
+
+Returns a Django task backend configuration. Supported schemes are `redis`,
+`redis-queue`, `postgres`, `postgresql`, `mysql`, `sqlite`, `dummy`, and
+`immediate`. Redis task URLs may use a Unix socket; database task URLs populate
+both `DATABASE` and `URL`. Its current default environment variable is
+`TASKS_URL`; pass a variable name to `env.tasks_url()` to use another value.
+
 ## Django Class Settings
 
-Support for the [`django-class-settings`](https://pypi.org/project/django-class-settings/) module is dynamically added to the env handler, allowing a much simplified use withing a class_settings.Settings class, e.g.:
+Support for the [`django-class-settings`](https://pypi.org/project/django-class-settings/) module is dynamically added to the env handler, allowing a much simplified use within a class_settings.Settings class, e.g.:
 
 ```python
 from django_settings_env import Env

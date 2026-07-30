@@ -27,12 +27,10 @@ TASKS_SCHEMES = {
 
 @register_plugin("tasks_url")
 class TasksPlugin(EnvPlugin):
-    """
-    Plugin for handling database configuration
-    """
+    """Plugin for handling task backend configuration."""
 
-    VAR = "CACHE_URL"
-    CONTEXTS = ["caches"]
+    VAR = "TASKS_URL"
+    CONTEXTS = ["tasks"]
 
     def get_backend(self, url: str, **kwargs) -> object:  # noqa: C901
         parsed = self.parse_url(url, context=self.CONTEXTS)

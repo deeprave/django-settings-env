@@ -214,7 +214,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "django", specifier = ">=5.0" },
+    { name = "django", specifier = ">=6.0,<7.0" },
     { name = "django-class-settings", marker = "extra == 'extras'", specifier = ">=0.2" },
     { name = "envex", specifier = ">=5.1.0" },
     { name = "hvac", marker = "extra == 'vault'", specifier = ">=1.1.1" },
