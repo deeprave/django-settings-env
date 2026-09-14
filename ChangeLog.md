@@ -1,5 +1,9 @@
 # ChangeLog
 
+### Release 6.1.0
+
+- Flags in `DATABASE_URL` query strings are now correctly promoted onto the database alias.
+
 ### Release 6.0.0
 
 - ⚠️  BREAKING CHANGE. Simplified environment-variable lookup by requiring `prefix=`

@@ -11,10 +11,14 @@ from ..parser import ParsedUrl, default_parser
 
 class ConfigDict(dict):
     def __setitem__(self, key, value):
-        if value:
+        if value is not None:
             super().__setitem__(key, value)
         elif key in self:
             super().__delitem__(key)
+
+    def set_none(self, key):
+        """Store an explicit None. Normal assignment still omits None."""
+        super().__setitem__(key, None)
 
     def update(self, *args, **kwargs):
         for key, value in dict(*args, **kwargs).items():
@@ -47,7 +51,7 @@ def is_true(value: Any) -> bool:
         return False
     if isinstance(value, str):
         value = value.lower()
-        return any(value.startswith(x) for x in ("tr", "ye", "1", "en"))
+        return any(value.startswith(x) for x in ("tr", "ye", "1", "en", "on"))
     return bool(value)
 
 

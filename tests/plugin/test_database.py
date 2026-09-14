@@ -40,6 +40,7 @@ def test_database_plugin_options_service(database_plugin):
     config = database_plugin.get_backend(url)
     assert config == {
         "ENGINE": "django.db.backends.postgresql",
+        "NAME": "",
         "OPTIONS": {"service": "my_service", "passfile": ".my_pgpass"},
     }
 
@@ -101,3 +102,74 @@ def test_database_plugin_falls_back_to_the_base_scheme_for_unknown_qualifiers(
 
     assert config["ENGINE"] == DB_ENGINES["postgresql"]
     assert config["NAME"] == "application"
+
+
+def test_promotes_conn_health_checks_and_keeps_sslmode_in_options(database_plugin):
+    url = "postgresql://u:p@localhost/db?CONN_HEALTH_CHECKS=True&sslmode=prefer"
+    config = database_plugin.get_backend(url)
+
+    assert config["CONN_HEALTH_CHECKS"] is True
+    assert config["OPTIONS"] == {"sslmode": "prefer"}
+    assert "CONN_HEALTH_CHECKS" not in config["OPTIONS"]
+    assert "conn_health_checks" not in config["OPTIONS"]
+
+
+def test_lowercase_query_key_promotes_to_canonical_django_name(database_plugin):
+    url = "postgresql://u:p@localhost/db?conn_health_checks=true"
+    config = database_plugin.get_backend(url)
+
+    assert config["CONN_HEALTH_CHECKS"] is True
+    assert "conn_health_checks" not in config
+
+
+def test_conn_max_age_integer_including_zero_is_kept(database_plugin):
+    url = "postgresql://u:p@localhost/db?CONN_MAX_AGE=0"
+    config = database_plugin.get_backend(url)
+
+    assert config["CONN_MAX_AGE"] == 0
+
+
+def test_conn_max_age_none_means_unlimited(database_plugin):
+    url = "postgresql://u:p@localhost/db?CONN_MAX_AGE=none"
+    config = database_plugin.get_backend(url)
+
+    assert config["CONN_MAX_AGE"] is None
+
+
+def test_false_boolean_is_kept_not_dropped_by_configdict(database_plugin):
+    url = "postgresql://u:p@localhost/db?CONN_HEALTH_CHECKS=false"
+    config = database_plugin.get_backend(url)
+
+    assert config["CONN_HEALTH_CHECKS"] is False
+
+
+def test_mixed_case_unknown_option_stays_in_options_unchanged(database_plugin):
+    url = "postgresql://u:p@localhost/db?application_name=rjf"
+    config = database_plugin.get_backend(url)
+
+    assert config["OPTIONS"] == {"application_name": "rjf"}
+    assert "application_name" not in config
+
+
+def test_test_query_key_is_not_promoted_as_a_scalar(database_plugin):
+    url = "postgresql://u:p@localhost/db?TEST=unit"
+    config = database_plugin.get_backend(url)
+
+    assert "TEST" not in config
+    assert config["OPTIONS"]["TEST"] == "unit"
+
+
+@pytest.mark.parametrize(
+    ("query", "key", "expected"),
+    [
+        ("ATOMIC_REQUESTS=true", "ATOMIC_REQUESTS", True),
+        ("AUTOCOMMIT=false", "AUTOCOMMIT", False),
+        ("DISABLE_SERVER_SIDE_CURSORS=1", "DISABLE_SERVER_SIDE_CURSORS", True),
+        ("TIME_ZONE=UTC", "TIME_ZONE", "UTC"),
+    ],
+)
+def test_promotes_other_django_alias_settings(database_plugin, query, key, expected):
+    config = database_plugin.get_backend(f"postgresql://u:p@localhost/db?{query}")
+
+    assert config[key] == expected
+    assert key not in config.get("OPTIONS", {})
