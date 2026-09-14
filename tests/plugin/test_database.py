@@ -151,6 +151,14 @@ def test_mixed_case_unknown_option_stays_in_options_unchanged(database_plugin):
     assert "application_name" not in config
 
 
+def test_test_query_key_is_not_promoted_as_a_scalar(database_plugin):
+    url = "postgresql://u:p@localhost/db?TEST=unit"
+    config = database_plugin.get_backend(url)
+
+    assert "TEST" not in config
+    assert config["OPTIONS"]["TEST"] == "unit"
+
+
 @pytest.mark.parametrize(
     ("query", "key", "expected"),
     [

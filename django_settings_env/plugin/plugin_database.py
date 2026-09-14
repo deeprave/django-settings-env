@@ -34,7 +34,6 @@ DJANGO_DATABASE_SETTINGS = {
     "AUTOCOMMIT": "bool",
     "DISABLE_SERVER_SIDE_CURSORS": "bool",
     "TIME_ZONE": "raw",
-    "TEST": "raw",
 }
 
 _UNLIMITED_CONN_MAX_AGE = frozenset({"", "none", "null"})
