@@ -1,6 +1,6 @@
 import re
 
-from . import EnvPlugin, ConfigDict, register_plugin
+from . import EnvPlugin, ConfigDict, register_plugin, is_true
 
 POSTGRES_ENGINE = "django.db.backends.postgresql"
 MYSQL_ENGINE = "django.db.backends.mysql"
@@ -25,20 +25,22 @@ DB_ENGINES = {
     "ldap": "ldapdb.backends.ldap",
 }
 
-# DB_OPTIONS = [
-#     "CONN_MAX_AGE",
-#     "ATOMIC_REQUESTS",
-#     "AUTOCOMMIT",
-#     "SSLMODE",
-#     "SSLROOTCERT",
-#     "TEST",
-#     # extensions
-#     "READ_ONLY",
-#     "READONLY",
-#     "HTTP_METHODS",
-#     "HTTP_WRITE_PATHS",
-#     "HTTP_WRITE_STICKY",
-# ]
+# Django alias keys that must not be passed through as libpq/driver OPTIONS.
+# Match query keys case-insensitively, then store these canonical names.
+DJANGO_DATABASE_SETTINGS = {
+    "CONN_HEALTH_CHECKS": "bool",
+    "CONN_MAX_AGE": "max_age",
+    "ATOMIC_REQUESTS": "bool",
+    "AUTOCOMMIT": "bool",
+    "DISABLE_SERVER_SIDE_CURSORS": "bool",
+    "TIME_ZONE": "raw",
+    "TEST": "raw",
+}
+
+_UNLIMITED_CONN_MAX_AGE = frozenset({"", "none", "null"})
+_DJANGO_DATABASE_SETTINGS_LOOKUP = {
+    name.lower(): (name, kind) for name, kind in DJANGO_DATABASE_SETTINGS.items()
+}
 
 
 def is_postgres(engine):
@@ -48,6 +50,38 @@ def is_postgres(engine):
         "django.contrib.gis.db.backends.postgis",
         "django_redshift_backend",
     )
+
+
+def _set_alias_setting(config: ConfigDict, key: str, value) -> None:
+    if value is None:
+        config.set_none(key)
+    else:
+        config[key] = value
+
+
+def _coerce_conn_max_age(value):
+    if value is None:
+        return None
+    if isinstance(value, str) and value.strip().lower() in _UNLIMITED_CONN_MAX_AGE:
+        return None
+    return int(value)
+
+
+def _coerce_alias_setting(kind: str, value):
+    if kind == "bool":
+        return is_true(value)
+    if kind == "max_age":
+        return _coerce_conn_max_age(value)
+    return value
+
+
+def _promote_django_database_settings(config: dict, options: dict) -> None:
+    for key in list(options):
+        match = _DJANGO_DATABASE_SETTINGS_LOOKUP.get(key.lower())
+        if match is None:
+            continue
+        name, kind = match
+        _set_alias_setting(config, name, _coerce_alias_setting(kind, options.pop(key)))
 
 
 @register_plugin("database_url")
@@ -85,6 +119,7 @@ class DatabasePlugin(EnvPlugin):
             config["PASSWORD"] = parsed.password
         if parsed.qs:
             options |= parsed.qs
+        _promote_django_database_settings(config, options)
         if options:
             if schema := options.pop("currentSchema", None):
                 if is_postgres(config["ENGINE"]):
